@@ -868,6 +868,7 @@ async function replayListPages(operationNames, needMore, { maxPages = 6, delayMs
   if (!name) return 0;
   const req = xuRequests.get(name);
   let cursor = fromCursor && xuCursors.has(name) ? xuCursors.get(name) : undefined;
+  let waited = false;
   let pages = 0;
   while (pages < maxPages && needMore()) {
     let response;
@@ -893,6 +894,16 @@ async function replayListPages(operationNames, needMore, { maxPages = 6, delayMs
     }
     pages++;
     xuDebug.replay.pages.push({ status: response.status });
+    if (response.status === 429 && !waited) {
+      // Same quota as the page itself: honour the reset X announced, once, then retry this cursor.
+      waited = true;
+      const wait = rateLimitWait(0, { blindMs: 60000 });
+      log.warn(`X rate-limited the direct requests after ${pages} page${pages === 1 ? "" : "s"}. Waiting ${fmtDuration(Math.round(wait / 1000))} for the reset, then continuing.`);
+      await countdown(wait, (left) => xuOverlay.count(`Rate limited by X · resuming in ${fmtDuration(left)}`));
+      xuDebug.rateLimit = null;
+      pages--;
+      continue;
+    }
     if (!response.ok) {
       log.step(`X answered ${response.status} when re-requesting page ${pages}; stopping.`);
       break;
@@ -1767,7 +1778,7 @@ async function collectTweetTimeline({ label = "tweets", stagnantLimit = 8, delay
       const before = kept();
       if (ops.length) {
         xuOverlay.count(`X stopped at ${before.toLocaleString("en-US")} ${label}; requesting the rest directly…`);
-        log.step(`X's page stopped at ${before} ${label} while the account counter says about ${ownerRecord.tweets}; requesting more pages directly.`);
+        log.step(`X's page loaded ${collector.list().length} ${label}, ${before} of them count for this report, while the account counter says about ${ownerRecord.tweets}; requesting more pages directly.`);
         const pages = await replayListPages(ops, () => kept() < target, { fromCursor: true, maxPages: Math.ceil((target - before) / 10) + 2, delayMs: 1200 });
         const after = kept();
         xuDebug.direct = { before, after, pages, ops, target };

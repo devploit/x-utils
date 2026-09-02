@@ -354,7 +354,7 @@ async function collectTweetTimeline({ label = "tweets", stagnantLimit = 8, delay
       const before = kept();
       if (ops.length) {
         xuOverlay.count(`X stopped at ${before.toLocaleString("en-US")} ${label}; requesting the rest directly…`);
-        log.step(`X's page stopped at ${before} ${label} while the account counter says about ${ownerRecord.tweets}; requesting more pages directly.`);
+        log.step(`X's page loaded ${collector.list().length} ${label}, ${before} of them count for this report, while the account counter says about ${ownerRecord.tweets}; requesting more pages directly.`);
         const pages = await replayListPages(ops, () => kept() < target, { fromCursor: true, maxPages: Math.ceil((target - before) / 10) + 2, delayMs: 1200 });
         const after = kept();
         xuDebug.direct = { before, after, pages, ops, target };
