@@ -23,22 +23,41 @@ if (!profile) {
 }
 const includeReplies = currentPath().endsWith("/with_replies");
 
+const isOwn = (t) => !t.promoted && (t.author || "").toLowerCase() === profile.toLowerCase() && (CONFIG.includeRetweets || !t.isRetweet) && (includeReplies || !t.isReply);
 const collected = await collectTweetTimeline({
   label: "posts",
   delayMs: CONFIG.scrollDelayMs,
   stagnantLimit: CONFIG.stagnantRounds,
   maxItems: CONFIG.maxTweets,
   refetchFirstPage: CONFIG.refetchFirstPage,
+  counts: isOwn,
 });
 
-const own = collected.filter((t) => !t.promoted && (t.author || "").toLowerCase() === profile.toLowerCase() && (CONFIG.includeRetweets || !t.isRetweet) && (includeReplies || !t.isReply));
+const own = collected.filter(isOwn);
 const stats = engagementStats(own);
+// Say what was left out, so the analysed count never looks like a shortfall.
+const leftOut = { replies: 0, reposts: 0, others: 0, promoted: 0 };
+for (const t of collected) {
+  if (isOwn(t)) continue;
+  if (t.promoted) leftOut.promoted++;
+  else if ((t.author || "").toLowerCase() !== profile.toLowerCase()) leftOut.others++;
+  else if (t.isRetweet && !CONFIG.includeRetweets) leftOut.reposts++;
+  else if (t.isReply && !includeReplies) leftOut.replies++;
+}
+const leftOutParts = [
+  leftOut.replies ? `${fmtInt(leftOut.replies)} ${leftOut.replies === 1 ? "reply" : "replies"} (open the "Replies" tab to include them)` : null,
+  leftOut.reposts ? `${fmtInt(leftOut.reposts)} repost${leftOut.reposts === 1 ? "" : "s"} (set includeRetweets: true to include them)` : null,
+  leftOut.others ? `${fmtInt(leftOut.others)} by other accounts` : null,
+  leftOut.promoted ? `${fmtInt(leftOut.promoted)} promoted` : null,
+].filter(Boolean);
+const scopeNote = leftOutParts.length ? `${fmtInt(collected.length)} posts collected; ${fmtInt(own.length)} analysed. Left out: ${leftOutParts.join(", ")}.` : null;
+if (scopeNote) log.info(scopeNote);
 // The profile's own post count tells us whether X cut the timeline short.
 const profileRecord = collected.profileRecord || null;
 const expectedPosts = profileRecord && typeof profileRecord.tweets === "number" ? Math.min(profileRecord.tweets, CONFIG.maxTweets) : null;
 const limited = !!(xuDebug.rateLimited || xuDebug.rateLimit || (xuDebug.scroll && xuDebug.scroll.quotaWaits) || (xuDebug.direct && xuDebug.direct.pages && xuDebug.direct.after === xuDebug.direct.before));
-const partialNote = expectedPosts && own.length < expectedPosts * 0.7
-  ? `X served ${fmtInt(own.length)} posts, while this account's counter says about ${fmtInt(profileRecord.tweets)} (that number includes replies, which the Posts tab hides). ${limited ? "X's limit on profile timelines got in the way during this run: wait 15 minutes and run again for the full picture." : "If that looks low, wait 15 minutes and run again: X caps how many timeline pages it serves per quarter hour."}`
+const partialNote = expectedPosts && collected.length < expectedPosts * 0.7
+  ? `X served ${fmtInt(collected.length)} posts, while this account's counter says about ${fmtInt(profileRecord.tweets)} (that number includes replies, which the Posts tab hides). ${limited ? "X's limit on profile timelines got in the way during this run: wait 15 minutes and run again for the full picture." : "If that looks low, wait 15 minutes and run again: X caps how many timeline pages it serves per quarter hour."}`
   : null;
 if (partialNote) log.warn(partialNote);
 const withViews = stats.rows.filter((r) => r.views !== null && r.views !== undefined).length;
@@ -86,7 +105,7 @@ await writeOutputs(outputBaseName("engagement", profile), {
       { label: "Best hour (local)", value: stats.bestHourLocal || "·" },
       { label: "Best weekday", value: stats.bestWeekday || "·" },
     ],
-    notes: [partialNote, withViews < stats.rows.length ? `${stats.rows.length - withViews} posts have no view count. X only counts views on posts from late 2022 onwards, so older posts are left out of the engagement rate.` : null].filter(Boolean),
+    notes: [scopeNote, partialNote, withViews < stats.rows.length ? `${stats.rows.length - withViews} posts have no view count. X only counts views on posts from late 2022 onwards, so older posts are left out of the engagement rate.` : null].filter(Boolean),
     sections: [
       htmlChartSection({
         id: "patterns",

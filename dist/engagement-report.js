@@ -593,10 +593,11 @@ async function autoScroll({
   let retries = 0;
   let delay = delayMs;
   let ticks = 0;
+  let nudges = 0;
   let quotaWaits = 0;
   let stopReason = null;
   const finish = (reason, count) => {
-    xuDebug.scroll = { ticks, stopReason: reason, collected: count, quotaWaits, retries };
+    xuDebug.scroll = { ticks, stopReason: reason, collected: count, quotaWaits, retries, nudges };
   };
   for (;;) {
     ticks++;
@@ -611,6 +612,14 @@ async function autoScroll({
       // X is still fetching the next page: do not count it as the end of the list (bounded below).
       if (loading && stagnant < stagnantLimit * 2) stagnant += 0.5;
       else stagnant++;
+      // Half-way through the patience budget, scroll back up a little and down
+      // again: X's "load more" sentinel sometimes needs to re-enter the viewport.
+      if (stagnant === Math.ceil(stagnantLimit / 2)) {
+        nudges++;
+        if (box) box.scrollBy(0, -Math.max(300, box.clientHeight * 0.5));
+        else window.scrollBy(0, -Math.max(300, window.innerHeight * 0.5));
+        await sleep(400);
+      }
     } else {
       stagnant = 0;
       last = count;
@@ -807,7 +816,10 @@ function installInterceptor(onJson, { match = XU_API_URL_RE } = {}) {
 function noteResponse(url, status, getHeader) {
   const op = operationName(url);
   xuDebug.statuses[status] = (xuDebug.statuses[status] || 0) + 1;
-  if (op) xuDebug.responses[op] = (xuDebug.responses[op] || 0) + 1;
+  if (op) {
+    xuDebug.responses[op] = (xuDebug.responses[op] || 0) + 1;
+    if (status !== 200) xuDebug.responses[`${op}:${status}`] = (xuDebug.responses[`${op}:${status}`] || 0) + 1;
+  }
   let remaining = null;
   let limit = null;
   let resetAt = null;
@@ -1721,7 +1733,9 @@ function diagnoseTweets(tweets, enriched) {
 
 const XU_SHOW_MORE_RE = /^(show (more )?replies|show this thread|mostrar (más )?respuestas|mostrar este hilo|afficher (plus de )?réponses|weitere antworten anzeigen|mostra (altre )?risposte)$/i;
 
-async function collectTweetTimeline({ label = "tweets", stagnantLimit = 8, delayMs = 900, maxItems = Infinity, refetchFirstPage = true, expandThreads = false, completeMissing = true, stopWhen = null } = {}) {
+// `counts(tweet)` says which collected posts the tool will keep (e.g. the
+// profile's own originals); the direct continuation aims at that number.
+async function collectTweetTimeline({ label = "tweets", stagnantLimit = 8, delayMs = 900, maxItems = Infinity, refetchFirstPage = true, expandThreads = false, completeMissing = true, stopWhen = null, counts = null } = {}) {
   const collector = createTweetCollector();
   const uninstall = installInterceptor((json, url) => collector.ingestJson(json, url));
   const startPath = currentPath();
@@ -1749,14 +1763,15 @@ async function collectTweetTimeline({ label = "tweets", stagnantLimit = 8, delay
     const owner = pathHandle(startPath);
     const ownerRecord = owner ? collector.users.get(owner.toLowerCase()) : null;
     const target = ownerRecord && typeof ownerRecord.tweets === "number" ? Math.min(ownerRecord.tweets, maxItems) : null;
-    if (target && !stopWhen && collector.list().length < target * 0.7) {
+    const kept = () => (counts ? collector.list().filter(counts).length : collector.list().length);
+    if (target && !stopWhen && kept() < target * 0.7) {
       const ops = collector.listOps().filter((n) => /Tweets|Timeline/i.test(n));
-      const before = collector.list().length;
+      const before = kept();
       if (ops.length) {
         xuOverlay.count(`X stopped at ${before.toLocaleString("en-US")} ${label}; requesting the rest directly…`);
         log.step(`X's page stopped at ${before} ${label} while the account counter says about ${ownerRecord.tweets}; requesting more pages directly.`);
-        const pages = await replayListPages(ops, () => collector.list().length < target, { fromCursor: true, maxPages: Math.ceil((target - before) / 15) + 1, delayMs: 1200 });
-        const after = collector.list().length;
+        const pages = await replayListPages(ops, () => kept() < target, { fromCursor: true, maxPages: Math.ceil((target - before) / 10) + 2, delayMs: 1200 });
+        const after = kept();
         xuDebug.direct = { before, after, pages, ops, target };
         if (after > before) log.info(`Fetched ${pages} more page${pages === 1 ? "" : "s"} directly: ${after - before} additional ${label}.`);
         else log.step(`Direct requests added nothing (X answered ${pages} page${pages === 1 ? "" : "s"}); keeping the ${before} ${label} from the page.`);
@@ -2701,9 +2716,13 @@ const XU_HTML_JS = `
         visibleRows(id).forEach(function(r){lines.push(Array.prototype.map.call(r.cells,function(td){var key=td.dataset.key;if(key==="handle"){var h=td.querySelector(".acct-handle");return csvCell(h?h.textContent.replace(/^@/,""):"")}if(key==="url"){var a=td.querySelector("a");return csvCell(a?a.href:"")}return csvCell(td.dataset.sort)}).join(","))})}
       else{lines.push("author,date,text,likes,reposts,replies,views,url");visibleCards(id).forEach(function(c){var h=c.querySelector(".acct-handle"),t=c.querySelector("time"),m=Array.prototype.map.call(c.querySelectorAll(".metric b"),function(b){return b.textContent.replace(/[^0-9.]/g,"")});while(m.length<4)m.push("");lines.push([h?h.textContent.replace(/^@/,""):"",t?t.getAttribute("datetime"):"",c.querySelector(".text").innerText,m[0],m[1],m[2],m[3],c.dataset.url].map(csvCell).join(","))})}
       var blob=new Blob(["\\ufeff"+lines.join("\\n")],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=(document.title||"x-utils").replace(/[^a-z0-9]+/gi,"-").toLowerCase()+"_"+id+".csv";document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(url);a.remove()},1000)})});
-  document.querySelectorAll("button[data-copy]").forEach(function(btn){var id=btn.dataset.copy,kind=btn.dataset.kind,label=btn.querySelector("span"),original=label.textContent;
-    btn.addEventListener("click",function(){var text;if(kind==="table"){text=visibleRows(id).map(function(r){var h=r.querySelector(".acct-handle");return h?h.textContent.trim():""}).filter(Boolean).join("\\n")}else{text=visibleCards(id).map(function(c){return c.dataset.url}).filter(Boolean).join("\\n")}
-      var n=text?text.split("\\n").length:0;function done(ok){label.textContent=ok?"Copied "+n:"Copy failed";btn.classList.toggle("done",ok);setTimeout(function(){label.textContent=original;btn.classList.remove("done")},1800)}
+  document.querySelectorAll("button[data-copy]").forEach(function(btn){var id=btn.dataset.copy,kind=btn.dataset.kind,what=btn.dataset.what||"handles",label=btn.querySelector("span"),original=label.textContent;
+    btn.addEventListener("click",function(){var text;
+      if(kind==="table"){text=visibleRows(id).map(function(r){if(what==="handles"){var h=r.querySelector(".acct-handle");return h?h.textContent.trim():""}var a=r.querySelector('td[data-key="url"] a');return a?a.href:""}).filter(Boolean).join("\\n")}
+      else{text=visibleCards(id).map(function(c){return c.dataset.url}).filter(Boolean).join("\\n")}
+      var n=text?text.split("\\n").length:0;
+      function done(ok){label.textContent=ok?"Copied "+n:"Copy failed";btn.classList.toggle("done",ok);setTimeout(function(){label.textContent=original;btn.classList.remove("done")},1800)}
+      if(!n){label.textContent="Nothing to copy";setTimeout(function(){label.textContent=original},1800);return}
       if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){done(true)},function(){done(false)})}else{var ta=document.createElement("textarea");ta.value=text;document.body.appendChild(ta);ta.select();var ok=false;try{ok=document.execCommand("copy")}catch(e){}ta.remove();done(ok)}})});
 })();
 `;
@@ -2972,22 +2991,41 @@ if (!profile) {
 }
 const includeReplies = currentPath().endsWith("/with_replies");
 
+const isOwn = (t) => !t.promoted && (t.author || "").toLowerCase() === profile.toLowerCase() && (CONFIG.includeRetweets || !t.isRetweet) && (includeReplies || !t.isReply);
 const collected = await collectTweetTimeline({
   label: "posts",
   delayMs: CONFIG.scrollDelayMs,
   stagnantLimit: CONFIG.stagnantRounds,
   maxItems: CONFIG.maxTweets,
   refetchFirstPage: CONFIG.refetchFirstPage,
+  counts: isOwn,
 });
 
-const own = collected.filter((t) => !t.promoted && (t.author || "").toLowerCase() === profile.toLowerCase() && (CONFIG.includeRetweets || !t.isRetweet) && (includeReplies || !t.isReply));
+const own = collected.filter(isOwn);
 const stats = engagementStats(own);
+// Say what was left out, so the analysed count never looks like a shortfall.
+const leftOut = { replies: 0, reposts: 0, others: 0, promoted: 0 };
+for (const t of collected) {
+  if (isOwn(t)) continue;
+  if (t.promoted) leftOut.promoted++;
+  else if ((t.author || "").toLowerCase() !== profile.toLowerCase()) leftOut.others++;
+  else if (t.isRetweet && !CONFIG.includeRetweets) leftOut.reposts++;
+  else if (t.isReply && !includeReplies) leftOut.replies++;
+}
+const leftOutParts = [
+  leftOut.replies ? `${fmtInt(leftOut.replies)} ${leftOut.replies === 1 ? "reply" : "replies"} (open the "Replies" tab to include them)` : null,
+  leftOut.reposts ? `${fmtInt(leftOut.reposts)} repost${leftOut.reposts === 1 ? "" : "s"} (set includeRetweets: true to include them)` : null,
+  leftOut.others ? `${fmtInt(leftOut.others)} by other accounts` : null,
+  leftOut.promoted ? `${fmtInt(leftOut.promoted)} promoted` : null,
+].filter(Boolean);
+const scopeNote = leftOutParts.length ? `${fmtInt(collected.length)} posts collected; ${fmtInt(own.length)} analysed. Left out: ${leftOutParts.join(", ")}.` : null;
+if (scopeNote) log.info(scopeNote);
 // The profile's own post count tells us whether X cut the timeline short.
 const profileRecord = collected.profileRecord || null;
 const expectedPosts = profileRecord && typeof profileRecord.tweets === "number" ? Math.min(profileRecord.tweets, CONFIG.maxTweets) : null;
 const limited = !!(xuDebug.rateLimited || xuDebug.rateLimit || (xuDebug.scroll && xuDebug.scroll.quotaWaits) || (xuDebug.direct && xuDebug.direct.pages && xuDebug.direct.after === xuDebug.direct.before));
-const partialNote = expectedPosts && own.length < expectedPosts * 0.7
-  ? `X served ${fmtInt(own.length)} posts, while this account's counter says about ${fmtInt(profileRecord.tweets)} (that number includes replies, which the Posts tab hides). ${limited ? "X's limit on profile timelines got in the way during this run: wait 15 minutes and run again for the full picture." : "If that looks low, wait 15 minutes and run again: X caps how many timeline pages it serves per quarter hour."}`
+const partialNote = expectedPosts && collected.length < expectedPosts * 0.7
+  ? `X served ${fmtInt(collected.length)} posts, while this account's counter says about ${fmtInt(profileRecord.tweets)} (that number includes replies, which the Posts tab hides). ${limited ? "X's limit on profile timelines got in the way during this run: wait 15 minutes and run again for the full picture." : "If that looks low, wait 15 minutes and run again: X caps how many timeline pages it serves per quarter hour."}`
   : null;
 if (partialNote) log.warn(partialNote);
 const withViews = stats.rows.filter((r) => r.views !== null && r.views !== undefined).length;
@@ -3035,7 +3073,7 @@ await writeOutputs(outputBaseName("engagement", profile), {
       { label: "Best hour (local)", value: stats.bestHourLocal || "·" },
       { label: "Best weekday", value: stats.bestWeekday || "·" },
     ],
-    notes: [partialNote, withViews < stats.rows.length ? `${stats.rows.length - withViews} posts have no view count. X only counts views on posts from late 2022 onwards, so older posts are left out of the engagement rate.` : null].filter(Boolean),
+    notes: [scopeNote, partialNote, withViews < stats.rows.length ? `${stats.rows.length - withViews} posts have no view count. X only counts views on posts from late 2022 onwards, so older posts are left out of the engagement rate.` : null].filter(Boolean),
     sections: [
       htmlChartSection({
         id: "patterns",

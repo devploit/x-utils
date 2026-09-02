@@ -12,6 +12,9 @@ All notable changes to x-utils are recorded here. The format follows [Keep a Cha
 - Silent rate limits: X's client stops asking for pages, without any error on screen, once the quota for a list operation is used up. Every tool now reads the quota X reports in its regular answers (`x-rate-limit-remaining` and `x-rate-limit-reset`), waits for the announced reset when the page goes quiet with quota at zero, and resumes instead of mistaking the silence for the end of the list.
 - Profile timelines that stop far short of the account's post counter are continued directly from the last cursor X delivered, so a run is no longer capped at whatever the page happened to render.
 - `xu.debug` now records responses per operation, HTTP status counts, the quota per operation, why scrolling stopped and what the direct continuation did.
+- Report: the copy button of a table without an account column really copies the post links now (the previous release shipped the old handler, which copied nothing).
+- `engagement-report` states what was collected and what was left out (replies, reposts, other authors, promoted) so the analysed count never looks like a shortfall, and the direct continuation keeps fetching until the analysed posts reach `maxTweets`.
+- Scrolling nudges the page (a short scroll up and down) when X's client goes quiet, before giving up on a list.
 - Spanish action bars: "elementos guardados" is read as the bookmark count.
 - Test fixture from a real 2026 post (a reply, author under `core.user_results`, `views.count`).
 

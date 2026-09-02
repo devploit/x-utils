@@ -471,9 +471,13 @@ half the time the bug is in the expectation." data-url="https://x.com/ritapetrov
         visibleRows(id).forEach(function(r){lines.push(Array.prototype.map.call(r.cells,function(td){var key=td.dataset.key;if(key==="handle"){var h=td.querySelector(".acct-handle");return csvCell(h?h.textContent.replace(/^@/,""):"")}if(key==="url"){var a=td.querySelector("a");return csvCell(a?a.href:"")}return csvCell(td.dataset.sort)}).join(","))})}
       else{lines.push("author,date,text,likes,reposts,replies,views,url");visibleCards(id).forEach(function(c){var h=c.querySelector(".acct-handle"),t=c.querySelector("time"),m=Array.prototype.map.call(c.querySelectorAll(".metric b"),function(b){return b.textContent.replace(/[^0-9.]/g,"")});while(m.length<4)m.push("");lines.push([h?h.textContent.replace(/^@/,""):"",t?t.getAttribute("datetime"):"",c.querySelector(".text").innerText,m[0],m[1],m[2],m[3],c.dataset.url].map(csvCell).join(","))})}
       var blob=new Blob(["\ufeff"+lines.join("\n")],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=(document.title||"x-utils").replace(/[^a-z0-9]+/gi,"-").toLowerCase()+"_"+id+".csv";document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(url);a.remove()},1000)})});
-  document.querySelectorAll("button[data-copy]").forEach(function(btn){var id=btn.dataset.copy,kind=btn.dataset.kind,label=btn.querySelector("span"),original=label.textContent;
-    btn.addEventListener("click",function(){var text;if(kind==="table"){text=visibleRows(id).map(function(r){var h=r.querySelector(".acct-handle");return h?h.textContent.trim():""}).filter(Boolean).join("\n")}else{text=visibleCards(id).map(function(c){return c.dataset.url}).filter(Boolean).join("\n")}
-      var n=text?text.split("\n").length:0;function done(ok){label.textContent=ok?"Copied "+n:"Copy failed";btn.classList.toggle("done",ok);setTimeout(function(){label.textContent=original;btn.classList.remove("done")},1800)}
+  document.querySelectorAll("button[data-copy]").forEach(function(btn){var id=btn.dataset.copy,kind=btn.dataset.kind,what=btn.dataset.what||"handles",label=btn.querySelector("span"),original=label.textContent;
+    btn.addEventListener("click",function(){var text;
+      if(kind==="table"){text=visibleRows(id).map(function(r){if(what==="handles"){var h=r.querySelector(".acct-handle");return h?h.textContent.trim():""}var a=r.querySelector('td[data-key="url"] a');return a?a.href:""}).filter(Boolean).join("\n")}
+      else{text=visibleCards(id).map(function(c){return c.dataset.url}).filter(Boolean).join("\n")}
+      var n=text?text.split("\n").length:0;
+      function done(ok){label.textContent=ok?"Copied "+n:"Copy failed";btn.classList.toggle("done",ok);setTimeout(function(){label.textContent=original;btn.classList.remove("done")},1800)}
+      if(!n){label.textContent="Nothing to copy";setTimeout(function(){label.textContent=original},1800);return}
       if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){done(true)},function(){done(false)})}else{var ta=document.createElement("textarea");ta.value=text;document.body.appendChild(ta);ta.select();var ok=false;try{ok=document.execCommand("copy")}catch(e){}ta.remove();done(ok)}})});
 })();
 </script>

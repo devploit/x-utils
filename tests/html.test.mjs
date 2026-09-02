@@ -156,3 +156,8 @@ test("charts carry data-tip tooltips", () => {
   const bars = lib.svgBars([{ label: "2026-08-01", value: 5, tip: "custom\ntip" }]);
   assert.ok(bars.includes('data-tip="custom\ntip"'));
 });
+
+test("the report copy handler honours data-what and reports an empty selection", () => {
+  assert.ok(lib.XU_HTML_JS.includes('td[data-key="url"] a'), "tables without an account column copy their links");
+  assert.ok(lib.XU_HTML_JS.includes("Nothing to copy"));
+});

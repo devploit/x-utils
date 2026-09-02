@@ -318,7 +318,9 @@ function diagnoseTweets(tweets, enriched) {
 
 const XU_SHOW_MORE_RE = /^(show (more )?replies|show this thread|mostrar (más )?respuestas|mostrar este hilo|afficher (plus de )?réponses|weitere antworten anzeigen|mostra (altre )?risposte)$/i;
 
-async function collectTweetTimeline({ label = "tweets", stagnantLimit = 8, delayMs = 900, maxItems = Infinity, refetchFirstPage = true, expandThreads = false, completeMissing = true, stopWhen = null } = {}) {
+// `counts(tweet)` says which collected posts the tool will keep (e.g. the
+// profile's own originals); the direct continuation aims at that number.
+async function collectTweetTimeline({ label = "tweets", stagnantLimit = 8, delayMs = 900, maxItems = Infinity, refetchFirstPage = true, expandThreads = false, completeMissing = true, stopWhen = null, counts = null } = {}) {
   const collector = createTweetCollector();
   const uninstall = installInterceptor((json, url) => collector.ingestJson(json, url));
   const startPath = currentPath();
@@ -346,14 +348,15 @@ async function collectTweetTimeline({ label = "tweets", stagnantLimit = 8, delay
     const owner = pathHandle(startPath);
     const ownerRecord = owner ? collector.users.get(owner.toLowerCase()) : null;
     const target = ownerRecord && typeof ownerRecord.tweets === "number" ? Math.min(ownerRecord.tweets, maxItems) : null;
-    if (target && !stopWhen && collector.list().length < target * 0.7) {
+    const kept = () => (counts ? collector.list().filter(counts).length : collector.list().length);
+    if (target && !stopWhen && kept() < target * 0.7) {
       const ops = collector.listOps().filter((n) => /Tweets|Timeline/i.test(n));
-      const before = collector.list().length;
+      const before = kept();
       if (ops.length) {
         xuOverlay.count(`X stopped at ${before.toLocaleString("en-US")} ${label}; requesting the rest directly…`);
         log.step(`X's page stopped at ${before} ${label} while the account counter says about ${ownerRecord.tweets}; requesting more pages directly.`);
-        const pages = await replayListPages(ops, () => collector.list().length < target, { fromCursor: true, maxPages: Math.ceil((target - before) / 15) + 1, delayMs: 1200 });
-        const after = collector.list().length;
+        const pages = await replayListPages(ops, () => kept() < target, { fromCursor: true, maxPages: Math.ceil((target - before) / 10) + 2, delayMs: 1200 });
+        const after = kept();
         xuDebug.direct = { before, after, pages, ops, target };
         if (after > before) log.info(`Fetched ${pages} more page${pages === 1 ? "" : "s"} directly: ${after - before} additional ${label}.`);
         else log.step(`Direct requests added nothing (X answered ${pages} page${pages === 1 ? "" : "s"}); keeping the ${before} ${label} from the page.`);

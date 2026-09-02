@@ -135,7 +135,10 @@ function installInterceptor(onJson, { match = XU_API_URL_RE } = {}) {
 function noteResponse(url, status, getHeader) {
   const op = operationName(url);
   xuDebug.statuses[status] = (xuDebug.statuses[status] || 0) + 1;
-  if (op) xuDebug.responses[op] = (xuDebug.responses[op] || 0) + 1;
+  if (op) {
+    xuDebug.responses[op] = (xuDebug.responses[op] || 0) + 1;
+    if (status !== 200) xuDebug.responses[`${op}:${status}`] = (xuDebug.responses[`${op}:${status}`] || 0) + 1;
+  }
   let remaining = null;
   let limit = null;
   let resetAt = null;

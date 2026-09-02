@@ -563,10 +563,11 @@ async function autoScroll({
   let retries = 0;
   let delay = delayMs;
   let ticks = 0;
+  let nudges = 0;
   let quotaWaits = 0;
   let stopReason = null;
   const finish = (reason, count) => {
-    xuDebug.scroll = { ticks, stopReason: reason, collected: count, quotaWaits, retries };
+    xuDebug.scroll = { ticks, stopReason: reason, collected: count, quotaWaits, retries, nudges };
   };
   for (;;) {
     ticks++;
@@ -581,6 +582,14 @@ async function autoScroll({
       // X is still fetching the next page: do not count it as the end of the list (bounded below).
       if (loading && stagnant < stagnantLimit * 2) stagnant += 0.5;
       else stagnant++;
+      // Half-way through the patience budget, scroll back up a little and down
+      // again: X's "load more" sentinel sometimes needs to re-enter the viewport.
+      if (stagnant === Math.ceil(stagnantLimit / 2)) {
+        nudges++;
+        if (box) box.scrollBy(0, -Math.max(300, box.clientHeight * 0.5));
+        else window.scrollBy(0, -Math.max(300, window.innerHeight * 0.5));
+        await sleep(400);
+      }
     } else {
       stagnant = 0;
       last = count;
