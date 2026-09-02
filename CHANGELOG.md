@@ -8,7 +8,12 @@ All notable changes to x-utils are recorded here. The format follows [Keep a Cha
 
 - Report: chart tooltips are now a real hover box (weekday and hour slot with post count and average, per-post date, likes, reposts, replies, views and an excerpt, follower deltas on the trend) instead of the browser's slow SVG titles.
 - Report: the copy button in tables copies handles when there is an account column and links otherwise (label changes to "Copy links"); it disappears when a table has nothing sensible to copy and reports "Nothing to copy" instead of silently copying an empty string.
-- `engagement-report` compares the collected posts with the account's real post count and flags a partial run when X's profile timeline stops early (typically rate-limited after other tools ran).
+- `engagement-report` compares the collected posts with the account's post counter and says so in the report when X served far fewer, with the likely cause.
+- Silent rate limits: X's client stops asking for pages, without any error on screen, once the quota for a list operation is used up. Every tool now reads the quota X reports in its regular answers (`x-rate-limit-remaining` and `x-rate-limit-reset`), waits for the announced reset when the page goes quiet with quota at zero, and resumes instead of mistaking the silence for the end of the list.
+- Profile timelines that stop far short of the account's post counter are continued directly from the last cursor X delivered, so a run is no longer capped at whatever the page happened to render.
+- `xu.debug` now records responses per operation, HTTP status counts, the quota per operation, why scrolling stopped and what the direct continuation did.
+- Spanish action bars: "elementos guardados" is read as the bookmark count.
+- Test fixture from a real 2026 post (a reply, author under `core.user_results`, `views.count`).
 
 ## [0.1.0] - 2026-09-02
 

@@ -12,6 +12,18 @@ const XU_API_URL_RE = /\/i\/api\//;
 // that page from its own cache after the tool starts, so it is never observed).
 const xuRequests = new Map();
 
+// The last "next page" cursor each operation delivered, so a list can be
+// continued directly from where X's own client stopped.
+const xuCursors = new Map();
+
+// Operations that page through a list; their quota is what runs out mid-scroll.
+const XU_LIST_OP_RE = /Tweets|Followers|Following|Bookmarks|Likes|Search|Timeline|Members|Blocked|Muted|TweetDetail/i;
+
+function operationName(url) {
+  const match = String(url).match(/\/graphql\/[^/]+\/([A-Za-z0-9_]+)/);
+  return match ? match[1] : null;
+}
+
 function headersToObject(headers) {
   const out = {};
   if (!headers) return out;
@@ -42,6 +54,11 @@ function installInterceptor(onJson, { match = XU_API_URL_RE } = {}) {
     } catch {
       return;
     }
+    const op = operationName(url);
+    if (op) {
+      const cursor = findBottomCursor(json);
+      if (cursor) xuCursors.set(op, cursor);
+    }
     try {
       onJson(json, url);
     } catch (err) {
@@ -65,7 +82,7 @@ function installInterceptor(onJson, { match = XU_API_URL_RE } = {}) {
     if (url && match.test(url)) {
       promise
         .then((res) => {
-          noteRateLimit(res.status, (name) => res.headers.get(name));
+          noteResponse(url, res.status, (name) => res.headers.get(name));
           return res.clone().text().then((text) => deliver(url, text));
         })
         .catch(() => {});
@@ -91,7 +108,7 @@ function installInterceptor(onJson, { match = XU_API_URL_RE } = {}) {
       rememberRequest(this.__xuUrl, this.__xuMethod, this.__xuHeaders, body);
       this.addEventListener("load", () => {
         try {
-          noteRateLimit(this.status, (name) => this.getResponseHeader(name));
+          noteResponse(this.__xuUrl, this.status, (name) => this.getResponseHeader(name));
           if (this.responseType === "" || this.responseType === "text") deliver(this.__xuUrl, this.responseText);
           else if (this.responseType === "json" && this.response) onJson(this.response, this.__xuUrl);
         } catch {
@@ -110,20 +127,42 @@ function installInterceptor(onJson, { match = XU_API_URL_RE } = {}) {
   };
 }
 
-// Records X's 429 answers together with the exact reset time it announces in
-// x-rate-limit-reset (epoch seconds), so waits can be precise.
-function noteRateLimit(status, getHeader) {
-  if (status !== 429) return;
-  let resetAt = null;
+// Records what every API answer says about its quota (x-rate-limit-remaining,
+// x-rate-limit-reset in epoch seconds) per operation, plus 429s explicitly.
+// X's own client stops asking for pages, silently, once remaining hits 0, so
+// knowing the quota from its regular answers is what lets a tool wait for the
+// reset instead of mistaking the silence for the end of the list.
+function noteResponse(url, status, getHeader) {
+  const op = operationName(url);
+  xuDebug.statuses[status] = (xuDebug.statuses[status] || 0) + 1;
+  if (op) xuDebug.responses[op] = (xuDebug.responses[op] || 0) + 1;
+  let remaining = null;
   let limit = null;
+  let resetAt = null;
   try {
+    const rem = getHeader("x-rate-limit-remaining");
+    if (rem !== null && rem !== undefined && rem !== "") remaining = Number(rem);
+    const lim = getHeader("x-rate-limit-limit");
+    if (lim) limit = Number(lim);
     const reset = Number(getHeader("x-rate-limit-reset"));
     if (reset > 0) resetAt = reset * 1000;
-    limit = getHeader("x-rate-limit-limit");
   } catch {
     /* header not exposed */
   }
-  xuDebug.rateLimit = { at: Date.now(), resetAt, limit, count: ((xuDebug.rateLimit && xuDebug.rateLimit.count) || 0) + 1 };
+  if (op && (remaining !== null || status === 429)) xuDebug.quota[op] = { remaining: status === 429 ? 0 : remaining, limit, resetAt, at: Date.now() };
+  if (status !== 429) return;
+  xuDebug.rateLimit = { at: Date.now(), resetAt, limit, op, count: ((xuDebug.rateLimit && xuDebug.rateLimit.count) || 0) + 1 };
+}
+
+// The list operation whose quota X reports as used up (with a reset still in
+// the future), or null. Most recent first when several qualify.
+function exhaustedQuota(re = XU_LIST_OP_RE) {
+  let best = null;
+  for (const [op, q] of Object.entries(xuDebug.quota)) {
+    if (!re.test(op) || q.remaining !== 0 || !q.resetAt || q.resetAt <= Date.now()) continue;
+    if (!best || q.at > best.at) best = { op, ...q };
+  }
+  return best;
 }
 
 // Finds the "next page" cursor anywhere in a timeline response.
@@ -139,12 +178,14 @@ function findBottomCursor(json) {
 // page), then follows cursors while `needMore()` says the list is still
 // incomplete. Goes through the wrapped fetch, so responses reach the collector
 // like any other. Returns the number of pages fetched.
-async function replayListPages(operationNames, needMore, { maxPages = 6, delayMs = 700 } = {}) {
+// With `fromCursor`, it continues from the last cursor X delivered for that
+// operation instead of starting over.
+async function replayListPages(operationNames, needMore, { maxPages = 6, delayMs = 700, fromCursor = false } = {}) {
   const name = operationNames.find((n) => xuRequests.has(n));
-  xuDebug.replay = { candidates: operationNames, observed: [...xuRequests.keys()], used: name || null, pages: [] };
+  xuDebug.replay = { candidates: operationNames, observed: [...xuRequests.keys()], used: name || null, fromCursor: !!(fromCursor && name && xuCursors.has(name)), pages: [] };
   if (!name) return 0;
   const req = xuRequests.get(name);
-  let cursor;
+  let cursor = fromCursor && xuCursors.has(name) ? xuCursors.get(name) : undefined;
   let pages = 0;
   while (pages < maxPages && needMore()) {
     let response;

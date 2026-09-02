@@ -120,7 +120,7 @@ function parseMetricsLabel(label) {
     replies: grab(/([\d.,\s]+)\s*(repl|respuesta|comentario|réponse|antwort|rispost)/i),
     retweets: grab(/([\d.,\s]+)\s*(repost|retweet|reposteo|republicaci|partage)/i),
     likes: grab(/([\d.,\s]+)\s*(like|me gusta|j'aime|gefällt|mi piace)/i),
-    bookmarks: grab(/([\d.,\s]+)\s*(bookmark|marcador|guardado|signet|lesezeichen|segnalibr)/i),
+    bookmarks: grab(/([\d.,\s]+)\s*(bookmark|marcador|(?:elementos? )?guardado|signet|lesezeichen|segnalibr)/i),
     views: grab(/([\d.,\s]+)\s*(view|visualizaci|vue|ansicht|reproducci)/i),
   };
 }
@@ -341,6 +341,26 @@ async function collectTweetTimeline({ label = "tweets", stagnantLimit = 8, delay
       beforeScroll: expandThreads ? () => clickButtons(XU_SHOW_MORE_RE, { max: 2, once: true }) : null,
       shouldStop: stopWhen ? () => stopWhen(collector.list()) : null,
     });
+    // A profile whose counter says there is much more than what X's page
+    // loaded: ask for the following pages directly, from the last cursor X gave.
+    const owner = pathHandle(startPath);
+    const ownerRecord = owner ? collector.users.get(owner.toLowerCase()) : null;
+    const target = ownerRecord && typeof ownerRecord.tweets === "number" ? Math.min(ownerRecord.tweets, maxItems) : null;
+    if (target && !stopWhen && collector.list().length < target * 0.7) {
+      const ops = collector.listOps().filter((n) => /Tweets|Timeline/i.test(n));
+      const before = collector.list().length;
+      if (ops.length) {
+        xuOverlay.count(`X stopped at ${before.toLocaleString("en-US")} ${label}; requesting the rest directly…`);
+        log.step(`X's page stopped at ${before} ${label} while the account counter says about ${ownerRecord.tweets}; requesting more pages directly.`);
+        const pages = await replayListPages(ops, () => collector.list().length < target, { fromCursor: true, maxPages: Math.ceil((target - before) / 15) + 1, delayMs: 1200 });
+        const after = collector.list().length;
+        xuDebug.direct = { before, after, pages, ops, target };
+        if (after > before) log.info(`Fetched ${pages} more page${pages === 1 ? "" : "s"} directly: ${after - before} additional ${label}.`);
+        else log.step(`Direct requests added nothing (X answered ${pages} page${pages === 1 ? "" : "s"}); keeping the ${before} ${label} from the page.`);
+      } else {
+        xuDebug.direct = { before, after: before, pages: 0, ops: [], target };
+      }
+    }
     if (completeMissing && collector.missingCount() > 0) {
       const before = collector.missingCount();
       xuOverlay.count(`Completing ${before} ${label} that loaded before the tool started…`);

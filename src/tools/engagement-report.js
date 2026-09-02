@@ -36,7 +36,10 @@ const stats = engagementStats(own);
 // The profile's own post count tells us whether X cut the timeline short.
 const profileRecord = collected.profileRecord || null;
 const expectedPosts = profileRecord && typeof profileRecord.tweets === "number" ? Math.min(profileRecord.tweets, CONFIG.maxTweets) : null;
-const partialNote = expectedPosts && own.length < expectedPosts * 0.7 ? `Partial: X served ${own.length} posts, but this account has about ${fmtInt(profileRecord.tweets)}. Its timeline endpoint is rate-limited for now (running several tools in a row does that); wait 15 minutes or more and run again for the full picture.` : null;
+const limited = !!(xuDebug.rateLimited || xuDebug.rateLimit || (xuDebug.scroll && xuDebug.scroll.quotaWaits) || (xuDebug.direct && xuDebug.direct.pages && xuDebug.direct.after === xuDebug.direct.before));
+const partialNote = expectedPosts && own.length < expectedPosts * 0.7
+  ? `X served ${fmtInt(own.length)} posts, while this account's counter says about ${fmtInt(profileRecord.tweets)} (that number includes replies, which the Posts tab hides). ${limited ? "X's limit on profile timelines got in the way during this run: wait 15 minutes and run again for the full picture." : "If that looks low, wait 15 minutes and run again: X caps how many timeline pages it serves per quarter hour."}`
+  : null;
 if (partialNote) log.warn(partialNote);
 const withViews = stats.rows.filter((r) => r.views !== null && r.views !== undefined).length;
 

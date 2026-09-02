@@ -14,7 +14,7 @@ export async function loadLib() {
   const source = (await Promise.all(files.map((f) => readFile(path.join(libDir, f), "utf8")))).join("\n");
   const names = new Set(["log"]);
   for (const m of source.matchAll(/^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/gm)) names.add(m[1]);
-  for (const m of source.matchAll(/^const\s+(XU_[A-Z0-9_]+)\s*=/gm)) names.add(m[1]);
+  for (const m of source.matchAll(/^const\s+(XU_[A-Z0-9_]+|xuDebug|xuRequests|xuCursors)\s*=/gm)) names.add(m[1]);
   const factory = new Function(`${source}\nreturn { ${[...names].join(", ")} };`);
   cached = factory();
   return cached;

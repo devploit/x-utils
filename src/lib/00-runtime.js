@@ -343,7 +343,7 @@ function previewVariant(html, filename) {
 // Keeps the last result reachable from the console for ad-hoc inspection.
 // Raw samples kept for diagnosing X format changes. Never written to files;
 // only reachable as window.xu.debug after a run.
-const xuDebug = { sampleUser: null, sampleCell: null, sampleTweet: null, sampleArticle: null, apiResponses: 0, bounce: null, completed: null, replay: null, rateLimited: null, rateLimit: null, phase: null, phaseAt: null };
+const xuDebug = { sampleUser: null, sampleCell: null, sampleTweet: null, sampleArticle: null, apiResponses: 0, responses: {}, statuses: {}, quota: {}, bounce: null, completed: null, replay: null, direct: null, scroll: null, rateLimited: null, rateLimit: null, phase: null, phaseAt: null };
 
 function publishResult(toolName, result, summary = "Done") {
   window.xu = window.xu || {};
@@ -546,6 +546,7 @@ async function autoScroll({
   label = "items",
   beforeScroll = null,
   shouldStop = null,
+  resumeOnQuota = true,
 }) {
   let box = scrollContainer();
   if (box) log.step("The list is inside a dialog; scrolling the dialog.");
@@ -561,10 +562,18 @@ async function autoScroll({
   let last = -1;
   let retries = 0;
   let delay = delayMs;
+  let ticks = 0;
+  let quotaWaits = 0;
+  let stopReason = null;
+  const finish = (reason, count) => {
+    xuDebug.scroll = { ticks, stopReason: reason, collected: count, quotaWaits, retries };
+  };
   for (;;) {
+    ticks++;
     const count = harvest();
     if (count >= maxItems) {
       log.info(`Reached the configured limit of ${maxItems} ${label}.`);
+      finish("maxItems", count);
       break;
     }
     const loading = !!contentRoot().querySelector('[role="progressbar"]');
@@ -582,6 +591,7 @@ async function autoScroll({
       if (retries >= XU_BACKOFF_MS.length) {
         log.warn(`X kept rate-limiting this list after ${retries} retries. Stopping with the ${count} ${label} collected so far; run again in 15 minutes to get the rest.`);
         xuDebug.rateLimited = { retries, collected: count, gaveUp: true };
+        finish("rateLimit", count);
         break;
       }
       const wait = rateLimitWait(retries);
@@ -597,9 +607,30 @@ async function autoScroll({
       xuDebug.rateLimited = { retries, collected: count, gaveUp: false };
       continue;
     }
-    if (stagnant >= stagnantLimit) break;
+    if (stagnant >= stagnantLimit) {
+      // X's client goes quiet, with no error on screen, once the quota for this
+      // list is used up. Its own answers told us the reset time: wait for it.
+      const quota = resumeOnQuota && quotaWaits < 2 ? exhaustedQuota() : null;
+      if (quota && quota.resetAt - Date.now() <= 16 * 60 * 1000) {
+        quotaWaits++;
+        const wait = quota.resetAt - Date.now() + 2500;
+        log.warn(`X stopped loading this list: its quota for ${quota.op} is used up (X says so in its own responses). It resets in ${fmtDuration(Math.round(wait / 1000))}; waiting, then continuing with the ${count.toLocaleString("en-US")} ${label} collected so far.`);
+        await countdown(wait, (left) => xuOverlay.count(`X quota used up · ${count.toLocaleString("en-US")} ${label} so far · resuming in ${fmtDuration(left)}`));
+        delete xuDebug.quota[quota.op];
+        clickRetryIfPresent();
+        await sleep(3000);
+        delay = Math.max(Math.round(delay * 1.5), 1500);
+        stagnant = 0;
+        scrollStep();
+        await sleep(delay);
+        continue;
+      }
+      finish("stagnant", count);
+      break;
+    }
     if (shouldStop && shouldStop(count)) {
       log.step("Nothing more of interest below; stopping early.");
+      finish("shouldStop", count);
       break;
     }
     if (beforeScroll) beforeScroll();

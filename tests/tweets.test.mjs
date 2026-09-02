@@ -89,3 +89,29 @@ test("normalizeTweet drops the trailing link to the quoted post from the text", 
   assert.equal(t.text, "Look at this");
   assert.equal(t.quotedUrl, "https://x.com/q/status/5");
 });
+
+test("normalizeTweet reads a real 2026 reply captured from x.com", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const raw = JSON.parse(await readFile(new URL("./fixtures/graphql-tweet-2026.json", import.meta.url), "utf8"));
+  const t = lib.normalizeTweet(raw);
+  assert.equal(t.id, "2095149448334570001");
+  assert.equal(t.author, "sample_reply");
+  assert.equal(t.authorName, "Sample Reply");
+  assert.equal(t.authorId, "1571624579604380001");
+  assert.equal(t.authorAvatar, "https://pbs.twimg.com/profile_images/2000000000000000001/sample_normal.jpg");
+  assert.equal(t.createdAt, "2026-09-02T13:58:49.000Z");
+  assert.equal(t.text, "@brand_account h3 max is much better");
+  assert.equal(t.url, "https://x.com/sample_reply/status/2095149448334570001");
+  assert.deepEqual([t.likes, t.replies, t.retweets, t.quotes, t.bookmarks, t.views], [1, 1, 0, 0, 0, 41]);
+  assert.equal(t.isReply, true);
+  assert.equal(t.inReplyToUser, "brand_account");
+  assert.equal(t.conversationId, "2095147633375580002");
+  assert.deepEqual(t.mentions, ["brand_account"]);
+  assert.equal(t.isRetweet, false);
+  assert.equal(t.isQuote, false);
+});
+
+test("parseMetricsLabel reads the Spanish action bar of a liked and reposted post", () => {
+  const m = lib.parseMetricsLabel("78 respuestas, 159 reposts, Reposteado, 650 Me gusta, Marcado como Me gusta, 288 elementos guardados, 465241 reproducciones");
+  assert.deepEqual(m, { replies: 78, retweets: 159, likes: 650, bookmarks: 288, views: 465241 });
+});

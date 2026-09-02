@@ -35,3 +35,26 @@ test("num converts numeric strings and rejects the rest", () => {
   assert.equal(lib.num(undefined), null);
   assert.equal(lib.num("abc"), null);
 });
+
+test("noteResponse tracks per-operation quota and exhaustedQuota reports a used-up list operation", () => {
+  const lib2 = lib;
+  const reset = String(Math.floor(Date.now() / 1000) + 600);
+  const headers = (h) => ({ "x-rate-limit-remaining": "3", "x-rate-limit-reset": reset, "x-rate-limit-limit": "50" })[h] ?? null;
+  lib2.noteResponse("https://x.com/i/api/graphql/abc/UserTweets?variables=%7B%7D", 200, headers);
+  assert.equal(lib2.xuDebug.quota.UserTweets.remaining, 3);
+  assert.equal(lib2.xuDebug.responses.UserTweets, 1);
+  assert.equal(lib2.exhaustedQuota(), null, "quota left means nothing is exhausted");
+  lib2.noteResponse("https://x.com/i/api/graphql/abc/UserTweets", 200, (h) => (h === "x-rate-limit-remaining" ? "0" : headers(h)));
+  const gone = lib2.exhaustedQuota();
+  assert.equal(gone.op, "UserTweets");
+  assert.ok(gone.resetAt > Date.now());
+  lib2.noteResponse("https://x.com/i/api/graphql/abc/UserByScreenName", 200, (h) => (h === "x-rate-limit-remaining" ? "0" : headers(h)));
+  assert.equal(lib2.exhaustedQuota().op, "UserTweets", "profile lookups are not list operations");
+  lib2.noteResponse("https://x.com/i/api/graphql/abc/Followers", 429, headers);
+  assert.equal(lib2.xuDebug.rateLimit.op, "Followers");
+  assert.equal(lib2.xuDebug.quota.Followers.remaining, 0);
+  assert.equal(lib2.xuDebug.statuses["429"], 1);
+  delete lib2.xuDebug.quota.UserTweets;
+  delete lib2.xuDebug.quota.Followers;
+  lib2.xuDebug.rateLimit = null;
+});

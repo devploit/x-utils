@@ -376,7 +376,7 @@ function previewVariant(html, filename) {
 // Keeps the last result reachable from the console for ad-hoc inspection.
 // Raw samples kept for diagnosing X format changes. Never written to files;
 // only reachable as window.xu.debug after a run.
-const xuDebug = { sampleUser: null, sampleCell: null, sampleTweet: null, sampleArticle: null, apiResponses: 0, bounce: null, completed: null, replay: null, rateLimited: null, rateLimit: null, phase: null, phaseAt: null };
+const xuDebug = { sampleUser: null, sampleCell: null, sampleTweet: null, sampleArticle: null, apiResponses: 0, responses: {}, statuses: {}, quota: {}, bounce: null, completed: null, replay: null, direct: null, scroll: null, rateLimited: null, rateLimit: null, phase: null, phaseAt: null };
 
 function publishResult(toolName, result, summary = "Done") {
   window.xu = window.xu || {};
@@ -579,6 +579,7 @@ async function autoScroll({
   label = "items",
   beforeScroll = null,
   shouldStop = null,
+  resumeOnQuota = true,
 }) {
   let box = scrollContainer();
   if (box) log.step("The list is inside a dialog; scrolling the dialog.");
@@ -594,10 +595,18 @@ async function autoScroll({
   let last = -1;
   let retries = 0;
   let delay = delayMs;
+  let ticks = 0;
+  let quotaWaits = 0;
+  let stopReason = null;
+  const finish = (reason, count) => {
+    xuDebug.scroll = { ticks, stopReason: reason, collected: count, quotaWaits, retries };
+  };
   for (;;) {
+    ticks++;
     const count = harvest();
     if (count >= maxItems) {
       log.info(`Reached the configured limit of ${maxItems} ${label}.`);
+      finish("maxItems", count);
       break;
     }
     const loading = !!contentRoot().querySelector('[role="progressbar"]');
@@ -615,6 +624,7 @@ async function autoScroll({
       if (retries >= XU_BACKOFF_MS.length) {
         log.warn(`X kept rate-limiting this list after ${retries} retries. Stopping with the ${count} ${label} collected so far; run again in 15 minutes to get the rest.`);
         xuDebug.rateLimited = { retries, collected: count, gaveUp: true };
+        finish("rateLimit", count);
         break;
       }
       const wait = rateLimitWait(retries);
@@ -630,9 +640,30 @@ async function autoScroll({
       xuDebug.rateLimited = { retries, collected: count, gaveUp: false };
       continue;
     }
-    if (stagnant >= stagnantLimit) break;
+    if (stagnant >= stagnantLimit) {
+      // X's client goes quiet, with no error on screen, once the quota for this
+      // list is used up. Its own answers told us the reset time: wait for it.
+      const quota = resumeOnQuota && quotaWaits < 2 ? exhaustedQuota() : null;
+      if (quota && quota.resetAt - Date.now() <= 16 * 60 * 1000) {
+        quotaWaits++;
+        const wait = quota.resetAt - Date.now() + 2500;
+        log.warn(`X stopped loading this list: its quota for ${quota.op} is used up (X says so in its own responses). It resets in ${fmtDuration(Math.round(wait / 1000))}; waiting, then continuing with the ${count.toLocaleString("en-US")} ${label} collected so far.`);
+        await countdown(wait, (left) => xuOverlay.count(`X quota used up · ${count.toLocaleString("en-US")} ${label} so far · resuming in ${fmtDuration(left)}`));
+        delete xuDebug.quota[quota.op];
+        clickRetryIfPresent();
+        await sleep(3000);
+        delay = Math.max(Math.round(delay * 1.5), 1500);
+        stagnant = 0;
+        scrollStep();
+        await sleep(delay);
+        continue;
+      }
+      finish("stagnant", count);
+      break;
+    }
     if (shouldStop && shouldStop(count)) {
       log.step("Nothing more of interest below; stopping early.");
+      finish("shouldStop", count);
       break;
     }
     if (beforeScroll) beforeScroll();
@@ -655,6 +686,18 @@ const XU_API_URL_RE = /\/i\/api\//;
 // headers X attached. Used to re-request the first page of a list (X serves
 // that page from its own cache after the tool starts, so it is never observed).
 const xuRequests = new Map();
+
+// The last "next page" cursor each operation delivered, so a list can be
+// continued directly from where X's own client stopped.
+const xuCursors = new Map();
+
+// Operations that page through a list; their quota is what runs out mid-scroll.
+const XU_LIST_OP_RE = /Tweets|Followers|Following|Bookmarks|Likes|Search|Timeline|Members|Blocked|Muted|TweetDetail/i;
+
+function operationName(url) {
+  const match = String(url).match(/\/graphql\/[^/]+\/([A-Za-z0-9_]+)/);
+  return match ? match[1] : null;
+}
 
 function headersToObject(headers) {
   const out = {};
@@ -686,6 +729,11 @@ function installInterceptor(onJson, { match = XU_API_URL_RE } = {}) {
     } catch {
       return;
     }
+    const op = operationName(url);
+    if (op) {
+      const cursor = findBottomCursor(json);
+      if (cursor) xuCursors.set(op, cursor);
+    }
     try {
       onJson(json, url);
     } catch (err) {
@@ -709,7 +757,7 @@ function installInterceptor(onJson, { match = XU_API_URL_RE } = {}) {
     if (url && match.test(url)) {
       promise
         .then((res) => {
-          noteRateLimit(res.status, (name) => res.headers.get(name));
+          noteResponse(url, res.status, (name) => res.headers.get(name));
           return res.clone().text().then((text) => deliver(url, text));
         })
         .catch(() => {});
@@ -735,7 +783,7 @@ function installInterceptor(onJson, { match = XU_API_URL_RE } = {}) {
       rememberRequest(this.__xuUrl, this.__xuMethod, this.__xuHeaders, body);
       this.addEventListener("load", () => {
         try {
-          noteRateLimit(this.status, (name) => this.getResponseHeader(name));
+          noteResponse(this.__xuUrl, this.status, (name) => this.getResponseHeader(name));
           if (this.responseType === "" || this.responseType === "text") deliver(this.__xuUrl, this.responseText);
           else if (this.responseType === "json" && this.response) onJson(this.response, this.__xuUrl);
         } catch {
@@ -754,20 +802,42 @@ function installInterceptor(onJson, { match = XU_API_URL_RE } = {}) {
   };
 }
 
-// Records X's 429 answers together with the exact reset time it announces in
-// x-rate-limit-reset (epoch seconds), so waits can be precise.
-function noteRateLimit(status, getHeader) {
-  if (status !== 429) return;
-  let resetAt = null;
+// Records what every API answer says about its quota (x-rate-limit-remaining,
+// x-rate-limit-reset in epoch seconds) per operation, plus 429s explicitly.
+// X's own client stops asking for pages, silently, once remaining hits 0, so
+// knowing the quota from its regular answers is what lets a tool wait for the
+// reset instead of mistaking the silence for the end of the list.
+function noteResponse(url, status, getHeader) {
+  const op = operationName(url);
+  xuDebug.statuses[status] = (xuDebug.statuses[status] || 0) + 1;
+  if (op) xuDebug.responses[op] = (xuDebug.responses[op] || 0) + 1;
+  let remaining = null;
   let limit = null;
+  let resetAt = null;
   try {
+    const rem = getHeader("x-rate-limit-remaining");
+    if (rem !== null && rem !== undefined && rem !== "") remaining = Number(rem);
+    const lim = getHeader("x-rate-limit-limit");
+    if (lim) limit = Number(lim);
     const reset = Number(getHeader("x-rate-limit-reset"));
     if (reset > 0) resetAt = reset * 1000;
-    limit = getHeader("x-rate-limit-limit");
   } catch {
     /* header not exposed */
   }
-  xuDebug.rateLimit = { at: Date.now(), resetAt, limit, count: ((xuDebug.rateLimit && xuDebug.rateLimit.count) || 0) + 1 };
+  if (op && (remaining !== null || status === 429)) xuDebug.quota[op] = { remaining: status === 429 ? 0 : remaining, limit, resetAt, at: Date.now() };
+  if (status !== 429) return;
+  xuDebug.rateLimit = { at: Date.now(), resetAt, limit, op, count: ((xuDebug.rateLimit && xuDebug.rateLimit.count) || 0) + 1 };
+}
+
+// The list operation whose quota X reports as used up (with a reset still in
+// the future), or null. Most recent first when several qualify.
+function exhaustedQuota(re = XU_LIST_OP_RE) {
+  let best = null;
+  for (const [op, q] of Object.entries(xuDebug.quota)) {
+    if (!re.test(op) || q.remaining !== 0 || !q.resetAt || q.resetAt <= Date.now()) continue;
+    if (!best || q.at > best.at) best = { op, ...q };
+  }
+  return best;
 }
 
 // Finds the "next page" cursor anywhere in a timeline response.
@@ -783,12 +853,14 @@ function findBottomCursor(json) {
 // page), then follows cursors while `needMore()` says the list is still
 // incomplete. Goes through the wrapped fetch, so responses reach the collector
 // like any other. Returns the number of pages fetched.
-async function replayListPages(operationNames, needMore, { maxPages = 6, delayMs = 700 } = {}) {
+// With `fromCursor`, it continues from the last cursor X delivered for that
+// operation instead of starting over.
+async function replayListPages(operationNames, needMore, { maxPages = 6, delayMs = 700, fromCursor = false } = {}) {
   const name = operationNames.find((n) => xuRequests.has(n));
-  xuDebug.replay = { candidates: operationNames, observed: [...xuRequests.keys()], used: name || null, pages: [] };
+  xuDebug.replay = { candidates: operationNames, observed: [...xuRequests.keys()], used: name || null, fromCursor: !!(fromCursor && name && xuCursors.has(name)), pages: [] };
   if (!name) return 0;
   const req = xuRequests.get(name);
-  let cursor;
+  let cursor = fromCursor && xuCursors.has(name) ? xuCursors.get(name) : undefined;
   let pages = 0;
   while (pages < maxPages && needMore()) {
     let response;
@@ -1454,7 +1526,7 @@ function parseMetricsLabel(label) {
     replies: grab(/([\d.,\s]+)\s*(repl|respuesta|comentario|réponse|antwort|rispost)/i),
     retweets: grab(/([\d.,\s]+)\s*(repost|retweet|reposteo|republicaci|partage)/i),
     likes: grab(/([\d.,\s]+)\s*(like|me gusta|j'aime|gefällt|mi piace)/i),
-    bookmarks: grab(/([\d.,\s]+)\s*(bookmark|marcador|guardado|signet|lesezeichen|segnalibr)/i),
+    bookmarks: grab(/([\d.,\s]+)\s*(bookmark|marcador|(?:elementos? )?guardado|signet|lesezeichen|segnalibr)/i),
     views: grab(/([\d.,\s]+)\s*(view|visualizaci|vue|ansicht|reproducci)/i),
   };
 }
@@ -1675,6 +1747,26 @@ async function collectTweetTimeline({ label = "tweets", stagnantLimit = 8, delay
       beforeScroll: expandThreads ? () => clickButtons(XU_SHOW_MORE_RE, { max: 2, once: true }) : null,
       shouldStop: stopWhen ? () => stopWhen(collector.list()) : null,
     });
+    // A profile whose counter says there is much more than what X's page
+    // loaded: ask for the following pages directly, from the last cursor X gave.
+    const owner = pathHandle(startPath);
+    const ownerRecord = owner ? collector.users.get(owner.toLowerCase()) : null;
+    const target = ownerRecord && typeof ownerRecord.tweets === "number" ? Math.min(ownerRecord.tweets, maxItems) : null;
+    if (target && !stopWhen && collector.list().length < target * 0.7) {
+      const ops = collector.listOps().filter((n) => /Tweets|Timeline/i.test(n));
+      const before = collector.list().length;
+      if (ops.length) {
+        xuOverlay.count(`X stopped at ${before.toLocaleString("en-US")} ${label}; requesting the rest directly…`);
+        log.step(`X's page stopped at ${before} ${label} while the account counter says about ${ownerRecord.tweets}; requesting more pages directly.`);
+        const pages = await replayListPages(ops, () => collector.list().length < target, { fromCursor: true, maxPages: Math.ceil((target - before) / 15) + 1, delayMs: 1200 });
+        const after = collector.list().length;
+        xuDebug.direct = { before, after, pages, ops, target };
+        if (after > before) log.info(`Fetched ${pages} more page${pages === 1 ? "" : "s"} directly: ${after - before} additional ${label}.`);
+        else log.step(`Direct requests added nothing (X answered ${pages} page${pages === 1 ? "" : "s"}); keeping the ${before} ${label} from the page.`);
+      } else {
+        xuDebug.direct = { before, after: before, pages: 0, ops: [], target };
+      }
+    }
     if (completeMissing && collector.missingCount() > 0) {
       const before = collector.missingCount();
       xuOverlay.count(`Completing ${before} ${label} that loaded before the tool started…`);
