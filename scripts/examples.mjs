@@ -297,8 +297,8 @@ const engagementHtml = lib.renderHtmlReport({
       note: "Times are your local time zone.",
       charts: [
         { title: "When your posts perform", caption: "average interactions per post by weekday and hour", svg: lib.svgHeatmap(lib.postingHeatmap(stats.rows)) },
-        { title: "Likes per post", caption: "oldest to newest", svg: lib.svgBars(chronological.map((t) => ({ label: lib.fmtDate(t.createdAt), value: t.likes || 0, title: `${lib.fmtDate(t.createdAt)} · ${lib.fmtInt(t.likes || 0)} likes · ${(t.text || "").slice(0, 80)}` })), { valueLabel: "likes" }) },
-        { title: "Views per post", caption: "oldest to newest", svg: lib.svgBars(chronological.map((t) => ({ label: lib.fmtDate(t.createdAt), value: t.views || 0, title: `${lib.fmtDate(t.createdAt)} · ${lib.fmtInt(t.views || 0)} views · ${(t.text || "").slice(0, 80)}` })), { valueLabel: "views" }) },
+        { title: "Likes per post", caption: "oldest to newest", svg: lib.svgBars(lib.postBarPoints(chronological, "likes"), { valueLabel: "likes" }) },
+        { title: "Views per post", caption: "oldest to newest", svg: lib.svgBars(lib.postBarPoints(chronological, "views"), { valueLabel: "views" }) },
       ],
     }),
     lib.htmlCardsSection({ id: "top", title: "Top 10 by likes", tweets: byLikes.slice(0, 10), numbered: true }),

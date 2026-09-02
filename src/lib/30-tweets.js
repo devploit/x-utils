@@ -359,6 +359,9 @@ async function collectTweetTimeline({ label = "tweets", stagnantLimit = 8, delay
   const tweets = collector.list();
   const enriched = tweets.filter((t) => t.enriched).length;
   log.info(`Collected ${tweets.length} ${label} (${enriched} with full API data).`);
+  // On a profile page, hand the owner's account record to the tool (post count, etc.).
+  const owner = pathHandle(startPath);
+  if (owner && collector.users.has(owner.toLowerCase())) Object.defineProperty(tweets, "profileRecord", { value: collector.users.get(owner.toLowerCase()), enumerable: false });
   diagnoseTweets(tweets, enriched);
   return tweets;
 }

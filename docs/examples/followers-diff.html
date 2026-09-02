@@ -184,6 +184,9 @@ a.open-text{width:auto;padding:0 8px;font-size:12.5px;font-weight:500;gap:5px}
 .btn-share{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--band-line);background:rgba(255,255,255,.06);color:var(--band-ink);font:500 12.5px/1 var(--sans);cursor:pointer}
 .btn-share:hover{background:rgba(255,255,255,.12)}
 
+.tip{position:fixed;z-index:50;pointer-events:none;max-width:320px;background:var(--ink);color:var(--surface);padding:8px 11px;border-radius:8px;font-size:12.5px;line-height:1.45;box-shadow:0 8px 24px -8px rgba(0,0,0,.45)}
+.tip .tip-head{font-weight:600;margin-bottom:2px}
+.chart [data-tip]{cursor:default}.chart .hm[data-tip]:hover,.chart .bar-v[data-tip]:hover{stroke:var(--ink);stroke-width:1.5}
 .colophon{margin:8px 0 0;font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:space-between}
 .colophon .brand{font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase}
 
@@ -209,7 +212,22 @@ a.open-text{width:auto;padding:0 8px;font-size:12.5px;font-weight:500;gap:5px}
 <section class="block" id="trend">
   <header class="block-head"><h2>Over time<span class="count num">1</span></h2></header>
   <p class="note">8 snapshots taken with this tool in this browser.</p>
-  <div class="charts"><figure class="chart-card wide"><figcaption><strong>Followers per snapshot</strong></figcaption><svg class="chart chart-trend" viewBox="0 0 720 170" role="img" aria-label="Trend over time"><path class="area" d="M8.0,142.0 L108.6,127.9 L209.1,120.8 L309.7,123.9 L410.3,91.6 L510.9,59.3 L611.4,62.3 L712.0,20.0 L712.0,142.0 L8.0,142.0 Z"/><path class="line" d="M8.0,142.0 L108.6,127.9 L209.1,120.8 L309.7,123.9 L410.3,91.6 L510.9,59.3 L611.4,62.3 L712.0,20.0"/><circle class="dot" cx="8.0" cy="142.0" r="4"><title>2026-07-15: 1,180 followers</title></circle><circle class="dot" cx="108.6" cy="127.9" r="4"><title>2026-07-22: 1,194 followers</title></circle><circle class="dot" cx="209.1" cy="120.8" r="4"><title>2026-07-29: 1,201 followers</title></circle><circle class="dot" cx="309.7" cy="123.9" r="4"><title>2026-08-05: 1,198 followers</title></circle><circle class="dot" cx="410.3" cy="91.6" r="4"><title>2026-08-12: 1,230 followers</title></circle><circle class="dot" cx="510.9" cy="59.3" r="4"><title>2026-08-19: 1,262 followers</title></circle><circle class="dot" cx="611.4" cy="62.3" r="4"><title>2026-08-26: 1,259 followers</title></circle><circle class="dot" cx="712.0" cy="20.0" r="4"><title>2026-09-02: 1,301 followers</title></circle><text class="val" x="712.0" y="10.0" text-anchor="end">1,301</text><text class="val" x="8.0" y="132.0">1,180</text><text class="ax" x="8" y="162">2026-07-15</text><text class="ax" x="712" y="162" text-anchor="end">2026-09-02</text></svg></figure></div>
+  <div class="charts"><figure class="chart-card wide"><figcaption><strong>Followers per snapshot</strong></figcaption><svg class="chart chart-trend" viewBox="0 0 720 170" role="img" aria-label="Trend over time"><path class="area" d="M8.0,142.0 L108.6,127.9 L209.1,120.8 L309.7,123.9 L410.3,91.6 L510.9,59.3 L611.4,62.3 L712.0,20.0 L712.0,142.0 L8.0,142.0 Z"/><path class="line" d="M8.0,142.0 L108.6,127.9 L209.1,120.8 L309.7,123.9 L410.3,91.6 L510.9,59.3 L611.4,62.3 L712.0,20.0"/><circle class="dot" cx="8.0" cy="142.0" r="5" data-tip="2026-07-15
+1,180 followers"><title>2026-07-15 · 1,180 followers</title></circle><circle class="dot" cx="108.6" cy="127.9" r="5" data-tip="2026-07-22
+1,194 followers
++14 since the previous snapshot"><title>2026-07-22 · 1,194 followers · +14 since the previous snapshot</title></circle><circle class="dot" cx="209.1" cy="120.8" r="5" data-tip="2026-07-29
+1,201 followers
++7 since the previous snapshot"><title>2026-07-29 · 1,201 followers · +7 since the previous snapshot</title></circle><circle class="dot" cx="309.7" cy="123.9" r="5" data-tip="2026-08-05
+1,198 followers
+-3 since the previous snapshot"><title>2026-08-05 · 1,198 followers · -3 since the previous snapshot</title></circle><circle class="dot" cx="410.3" cy="91.6" r="5" data-tip="2026-08-12
+1,230 followers
++32 since the previous snapshot"><title>2026-08-12 · 1,230 followers · +32 since the previous snapshot</title></circle><circle class="dot" cx="510.9" cy="59.3" r="5" data-tip="2026-08-19
+1,262 followers
++32 since the previous snapshot"><title>2026-08-19 · 1,262 followers · +32 since the previous snapshot</title></circle><circle class="dot" cx="611.4" cy="62.3" r="5" data-tip="2026-08-26
+1,259 followers
+-3 since the previous snapshot"><title>2026-08-26 · 1,259 followers · -3 since the previous snapshot</title></circle><circle class="dot" cx="712.0" cy="20.0" r="5" data-tip="2026-09-02
+1,301 followers
++42 since the previous snapshot"><title>2026-09-02 · 1,301 followers · +42 since the previous snapshot</title></circle><text class="val" x="712.0" y="10.0" text-anchor="end">1,301</text><text class="val" x="8.0" y="132.0">1,180</text><text class="ax" x="8" y="162">2026-07-15</text><text class="ax" x="712" y="162" text-anchor="end">2026-09-02</text></svg></figure></div>
 </section>
 
 <section class="block" id="removed">
@@ -217,7 +235,7 @@ a.open-text{width:auto;padding:0 8px;font-size:12.5px;font-weight:500;gap:5px}
     <h2>Unfollowed you<span class="count num">4</span></h2>
     <div class="toolbar">
     <label class="filter"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="sr-only">Filter rows</span><input type="search" placeholder="Filter 4 rows…" data-filter="removed" data-kind="table"><kbd title="Press / to search">/</kbd></label>
-    <button type="button" class="btn" data-copy="removed" data-kind="table" title="Copy the handles of the rows currently shown"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg><span>Copy handles</span></button>
+    <button type="button" class="btn" data-copy="removed" data-kind="table" data-what="handles" title="Copy the @handles of the rows currently shown"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg><span>Copy handles</span></button>
     <button type="button" class="btn btn-quiet" data-csv="removed" data-kind="table" title="Download the rows currently shown as CSV"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0 4-4m-4 4-4-4M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg><span>CSV</span></button>
   </div>
   </header>
@@ -234,7 +252,7 @@ a.open-text{width:auto;padding:0 8px;font-size:12.5px;font-weight:500;gap:5px}
     <h2>New followers<span class="count num">9</span></h2>
     <div class="toolbar">
     <label class="filter"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="sr-only">Filter rows</span><input type="search" placeholder="Filter 9 rows…" data-filter="added" data-kind="table"><kbd title="Press / to search">/</kbd></label>
-    <button type="button" class="btn" data-copy="added" data-kind="table" title="Copy the handles of the rows currently shown"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg><span>Copy handles</span></button>
+    <button type="button" class="btn" data-copy="added" data-kind="table" data-what="handles" title="Copy the @handles of the rows currently shown"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg><span>Copy handles</span></button>
     <button type="button" class="btn btn-quiet" data-csv="added" data-kind="table" title="Download the rows currently shown as CSV"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0 4-4m-4 4-4-4M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg><span>CSV</span></button>
   </div>
   </header>
@@ -256,7 +274,7 @@ a.open-text{width:auto;padding:0 8px;font-size:12.5px;font-weight:500;gap:5px}
     <h2>Renamed accounts<span class="count num">1</span></h2>
     <div class="toolbar">
     <label class="filter"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="sr-only">Filter rows</span><input type="search" placeholder="Filter 1 rows…" data-filter="renamed" data-kind="table"><kbd title="Press / to search">/</kbd></label>
-    <button type="button" class="btn" data-copy="renamed" data-kind="table" title="Copy the handles of the rows currently shown"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg><span>Copy handles</span></button>
+    <button type="button" class="btn" data-copy="renamed" data-kind="table" data-what="handles" title="Copy the @handles of the rows currently shown"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg><span>Copy handles</span></button>
     <button type="button" class="btn btn-quiet" data-csv="renamed" data-kind="table" title="Download the rows currently shown as CSV"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0 4-4m-4 4-4-4M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg><span>CSV</span></button>
   </div>
   </header>
@@ -293,6 +311,12 @@ a.open-text{width:auto;padding:0 8px;font-size:12.5px;font-weight:500;gap:5px}
     rowEl.querySelectorAll(".chip-btn").forEach(function(btn){btn.addEventListener("click",function(){var on=btn.getAttribute("aria-pressed")==="true";
       rowEl.querySelectorAll(".chip-btn").forEach(function(b){b.setAttribute("aria-pressed","false")});
       if(on){activeChip[id]=null}else{btn.setAttribute("aria-pressed","true");activeChip[id]=JSON.parse(btn.dataset.chip)}applyFilters(id,"table")})})});
+  // Chart tooltips: a floating box that follows the pointer over any [data-tip].
+  var tip=document.createElement("div");tip.className="tip";tip.hidden=true;document.body.appendChild(tip);
+  function placeTip(e){var x=e.clientX+14,y=e.clientY+16;var r=tip.getBoundingClientRect();if(x+r.width>window.innerWidth-8)x=e.clientX-r.width-14;if(y+r.height>window.innerHeight-8)y=e.clientY-r.height-12;tip.style.left=x+"px";tip.style.top=y+"px"}
+  document.addEventListener("mouseover",function(e){var el=e.target.closest?e.target.closest("[data-tip]"):null;if(!el)return;tip.innerHTML="";String(el.dataset.tip).split("\n").forEach(function(line,i){var d=document.createElement("div");if(i===0)d.className="tip-head";d.textContent=line;tip.appendChild(d)});tip.hidden=false;placeTip(e)});
+  document.addEventListener("mousemove",function(e){if(!tip.hidden)placeTip(e)});
+  document.addEventListener("mouseout",function(e){var el=e.target.closest?e.target.closest("[data-tip]"):null;if(el&&!(e.relatedTarget&&el.contains(e.relatedTarget)))tip.hidden=true});
   var shareData=null;try{shareData=JSON.parse(document.getElementById("xu-share").textContent)}catch(e){}
   function wrapText(ctx,text,maxWidth,maxLines){var words=text.split(" "),lines=[],line="";for(var i=0;i<words.length;i++){var t=line?line+" "+words[i]:words[i];if(ctx.measureText(t).width>maxWidth&&line){lines.push(line);line=words[i]}else line=t}if(line)lines.push(line);
     if(lines.length>maxLines){lines=lines.slice(0,maxLines);lines[maxLines-1]=lines[maxLines-1].replace(/\s+\S*$/,"")+"…"}return lines}

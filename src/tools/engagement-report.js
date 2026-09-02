@@ -33,6 +33,11 @@ const collected = await collectTweetTimeline({
 
 const own = collected.filter((t) => !t.promoted && (t.author || "").toLowerCase() === profile.toLowerCase() && (CONFIG.includeRetweets || !t.isRetweet) && (includeReplies || !t.isReply));
 const stats = engagementStats(own);
+// The profile's own post count tells us whether X cut the timeline short.
+const profileRecord = collected.profileRecord || null;
+const expectedPosts = profileRecord && typeof profileRecord.tweets === "number" ? Math.min(profileRecord.tweets, CONFIG.maxTweets) : null;
+const partialNote = expectedPosts && own.length < expectedPosts * 0.7 ? `Partial: X served ${own.length} posts, but this account has about ${fmtInt(profileRecord.tweets)}. Its timeline endpoint is rate-limited for now (running several tools in a row does that); wait 15 minutes or more and run again for the full picture.` : null;
+if (partialNote) log.warn(partialNote);
 const withViews = stats.rows.filter((r) => r.views !== null && r.views !== undefined).length;
 
 console.log("");
@@ -78,7 +83,7 @@ await writeOutputs(outputBaseName("engagement", profile), {
       { label: "Best hour (local)", value: stats.bestHourLocal || "·" },
       { label: "Best weekday", value: stats.bestWeekday || "·" },
     ],
-    notes: withViews < stats.rows.length ? [`${stats.rows.length - withViews} posts have no view count. X only counts views on posts from late 2022 onwards, so older posts are left out of the engagement rate.`] : [],
+    notes: [partialNote, withViews < stats.rows.length ? `${stats.rows.length - withViews} posts have no view count. X only counts views on posts from late 2022 onwards, so older posts are left out of the engagement rate.` : null].filter(Boolean),
     sections: [
       htmlChartSection({
         id: "patterns",
@@ -86,8 +91,8 @@ await writeOutputs(outputBaseName("engagement", profile), {
         note: "Times are your local time zone.",
         charts: [
           { title: "When your posts perform", caption: "average interactions per post by weekday and hour", svg: svgHeatmap(postingHeatmap(stats.rows)) },
-          { title: "Likes per post", caption: "oldest to newest", svg: svgBars(chronological.map((t) => ({ label: fmtDate(t.createdAt), value: t.likes || 0, title: `${fmtDate(t.createdAt)} · ${fmtInt(t.likes || 0)} likes · ${(t.text || "").slice(0, 80)}` })), { valueLabel: "likes" }) },
-          { title: "Views per post", caption: "oldest to newest", svg: svgBars(chronological.map((t) => ({ label: fmtDate(t.createdAt), value: t.views || 0, title: `${fmtDate(t.createdAt)} · ${fmtInt(t.views || 0)} views · ${(t.text || "").slice(0, 80)}` })), { valueLabel: "views" }) },
+          { title: "Likes per post", caption: "oldest to newest", svg: svgBars(postBarPoints(chronological, "likes"), { valueLabel: "likes" }) },
+          { title: "Views per post", caption: "oldest to newest", svg: svgBars(postBarPoints(chronological, "views"), { valueLabel: "views" }) },
         ],
       }),
       htmlCardsSection({ id: "top", title: `Top ${Math.min(10, byLikes.length)} by likes`, tweets: byLikes.slice(0, 10), numbered: true }),

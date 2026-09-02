@@ -40,8 +40,9 @@ function svgHeatmap(heatmap, { metricLabel = "interactions per post" } = {}) {
       const x = left + hour * (cell + gap);
       const y = top + day * (cell + gap);
       const opacity = c.posts ? 0.18 + 0.82 * (heatmap.max ? c.avg / heatmap.max : 0) : 0;
-      const title = c.posts ? `${XU_DAY_LABELS[day]} ${String(hour).padStart(2, "0")}:00 · ${c.posts} post${c.posts === 1 ? "" : "s"} · ${fmtInt(Math.round(c.avg))} ${metricLabel}` : `${XU_DAY_LABELS[day]} ${String(hour).padStart(2, "0")}:00 · no posts`;
-      parts.push(`<rect class="${c.posts ? "hm" : "hm hm-empty"}" x="${x}" y="${y}" width="${cell}" height="${cell}" rx="5"${c.posts ? ` fill-opacity="${opacity.toFixed(2)}"` : ""}><title>${htmlEscape(title)}</title></rect>`);
+      const slot = `${XU_DAY_LABELS[day]} ${String(hour).padStart(2, "0")}:00 to ${String((hour + 1) % 24).padStart(2, "0")}:00`;
+      const tip = c.posts ? `${slot}\n${c.posts} post${c.posts === 1 ? "" : "s"} published in this slot\n${fmtInt(Math.round(c.avg))} ${metricLabel} on average${heatmap.max && c.avg === heatmap.max ? "\nYour best slot" : ""}` : `${slot}\nNo posts in this slot`;
+      parts.push(`<rect class="${c.posts ? "hm" : "hm hm-empty"}" x="${x}" y="${y}" width="${cell}" height="${cell}" rx="5"${c.posts ? ` fill-opacity="${opacity.toFixed(2)}"` : ""} data-tip="${htmlEscape(tip)}"><title>${htmlEscape(tip.replace(/\n/g, " · "))}</title></rect>`);
     });
   });
   const ly = top + 7 * (cell + gap) + 16;
@@ -53,6 +54,20 @@ function svgHeatmap(heatmap, { metricLabel = "interactions per post" } = {}) {
 
 // Vertical bars in the given order. points = [{ label, value, title }].
 // Heights use a square-root scale so one viral post does not flatten the rest.
+// One bar per post for svgBars, with a three-line tooltip: date and the
+// charted metric, the other counters, then an excerpt of the post.
+function postBarPoints(rows, metric) {
+  const excerpt = (t) => { const text = (t.text || "").replace(/\s+/g, " ").trim(); return text.length > 110 ? `${text.slice(0, 110)}…` : text || "(no text)"; };
+  const views = (t) => (t.views ? `${fmtInt(t.views)} views` : "no view count");
+  return rows.map((t) => {
+    const head = metric === "views" ? `${fmtDate(t.createdAt)} · ${views(t)}` : `${fmtDate(t.createdAt)} · ${fmtInt(t.likes || 0)} likes`;
+    const detail = metric === "views"
+      ? `${fmtInt(t.likes || 0)} likes · ${t.engagementRate === null || t.engagementRate === undefined ? "no engagement rate" : `${t.engagementRate}% engagement`}`
+      : `${fmtInt(t.retweets || 0)} reposts · ${fmtInt(t.replies || 0)} replies · ${views(t)}`;
+    return { label: fmtDate(t.createdAt), value: (metric === "views" ? t.views : t.likes) || 0, tip: `${head}\n${detail}\n${excerpt(t)}` };
+  });
+}
+
 function svgBars(points, { valueLabel = "" } = {}) {
   const n = points.length;
   if (!n) return "";
@@ -69,7 +84,8 @@ function svgBars(points, { valueLabel = "" } = {}) {
   points.forEach((p, i) => {
     const h = Math.max(1, Math.sqrt((p.value || 0) / max) * plotH);
     const x = i * slot + (slot - barW) / 2;
-    parts.push(`<rect class="bar-v" x="${x.toFixed(1)}" y="${(height - bottom - h).toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="2"><title>${htmlEscape(p.title || `${p.label}: ${fmtInt(p.value)}`)}</title></rect>`);
+    const tip = p.tip || p.title || `${p.label}\n${fmtInt(p.value)}${valueLabel ? ` ${valueLabel}` : ""}`;
+    parts.push(`<rect class="bar-v" x="${x.toFixed(1)}" y="${(height - bottom - h).toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="2" data-tip="${htmlEscape(tip)}"><title>${htmlEscape(tip.replace(/\n/g, " · "))}</title></rect>`);
   });
   const first = points[0].label;
   const last = points[n - 1].label;
@@ -117,7 +133,8 @@ function svgHistogram(hist, { noun = "accounts" } = {}) {
   hist.buckets.forEach((b, i) => {
     const h = b.count ? Math.max(2, (b.count / max) * plotH) : 0;
     const x = i * slot + (slot - barW) / 2;
-    parts.push(`<rect class="bar-v" x="${x.toFixed(1)}" y="${(height - bottom - h).toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="4"><title>${htmlEscape(`${b.label} followers: ${fmtInt(b.count)} ${noun}`)}</title></rect>`);
+    const tip = `${b.label} followers\n${fmtInt(b.count)} ${noun}`;
+    parts.push(`<rect class="bar-v" x="${x.toFixed(1)}" y="${(height - bottom - h).toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="4" data-tip="${htmlEscape(tip)}"><title>${htmlEscape(tip.replace(/\n/g, " · "))}</title></rect>`);
     parts.push(`<text class="val" x="${(i * slot + slot / 2).toFixed(1)}" y="${(height - bottom - h - 7).toFixed(1)}" text-anchor="middle">${fmtInt(b.count)}</text>`);
     parts.push(`<text class="ax" x="${(i * slot + slot / 2).toFixed(1)}" y="${height - 10}" text-anchor="middle">${htmlEscape(b.label)}</text>`);
   });
@@ -146,7 +163,9 @@ function svgTrend(points, { valueLabel = "" } = {}) {
   const area = `${path} L${x(pts.length - 1).toFixed(1)},${(top + plotH).toFixed(1)} L${x(0).toFixed(1)},${(top + plotH).toFixed(1)} Z`;
   const parts = [`<path class="area" d="${area}"/>`, `<path class="line" d="${path}"/>`];
   pts.forEach((p, i) => {
-    parts.push(`<circle class="dot" cx="${x(i).toFixed(1)}" cy="${y(p.value).toFixed(1)}" r="4"><title>${htmlEscape(`${fmtDate(p.date)}: ${fmtInt(p.value)}${valueLabel ? ` ${valueLabel}` : ""}`)}</title></circle>`);
+    const delta = i ? p.value - pts[i - 1].value : null;
+    const tip = `${fmtDate(p.date)}\n${fmtInt(p.value)}${valueLabel ? ` ${valueLabel}` : ""}${delta === null ? "" : `\n${delta >= 0 ? "+" : ""}${fmtInt(delta)} since the previous snapshot`}`;
+    parts.push(`<circle class="dot" cx="${x(i).toFixed(1)}" cy="${y(p.value).toFixed(1)}" r="5" data-tip="${htmlEscape(tip)}"><title>${htmlEscape(tip.replace(/\n/g, " · "))}</title></circle>`);
   });
   parts.push(`<text class="val" x="${x(pts.length - 1).toFixed(1)}" y="${(y(pts[pts.length - 1].value) - 10).toFixed(1)}" text-anchor="end">${fmtInt(pts[pts.length - 1].value)}</text>`);
   parts.push(`<text class="val" x="${x(0).toFixed(1)}" y="${(y(pts[0].value) - 10).toFixed(1)}">${fmtInt(pts[0].value)}</text>`);

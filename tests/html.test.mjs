@@ -138,3 +138,21 @@ test("media thumbnails load the small variant and link to the original", () => {
   assert.ok(lib.htmlCardsSection({ id: "c", title: "C", tweets: [{ id: "1", author: "a", text: "x", media: [], url: "https://x.com/a/status/1" }] }).includes('class="cards cards-flow"'));
   assert.ok(!lib.htmlCardsSection({ id: "c", title: "C", tweets: [{ id: "1", author: "a", text: "x", media: [], url: "https://x.com/a/status/1" }], numbered: true }).includes("cards-flow"));
 });
+
+test("toolbar copy button matches what the section can copy", () => {
+  const withHandles = lib.htmlTableSection({ id: "a", title: "A", columns: ["handle", "followers"], rows: [{ handle: "x", followers: 1 }] });
+  assert.ok(withHandles.includes('data-what="handles"') && withHandles.includes("<span>Copy handles</span>"));
+  const withUrls = lib.htmlTableSection({ id: "b", title: "B", columns: ["createdAt", "text", "url"], rows: [{ createdAt: "2026-01-01T00:00:00Z", text: "t", url: "https://x.com/a/status/1" }] });
+  assert.ok(withUrls.includes('data-what="links"') && withUrls.includes("<span>Copy links</span>"));
+  const nothing = lib.htmlTableSection({ id: "c", title: "C", columns: ["createdAt", "text"], rows: [{ createdAt: "2026-01-01T00:00:00Z", text: "t" }] });
+  assert.ok(!nothing.includes("data-copy="), "no copy button when there is nothing to copy");
+  assert.ok(nothing.includes("data-csv="), "CSV export stays available");
+});
+
+test("charts carry data-tip tooltips", () => {
+  const hm = lib.svgHeatmap(lib.postingHeatmap([{ createdAt: "2026-09-01T10:00:00", interactions: 3 }]));
+  assert.ok(hm.includes('data-tip="Mon') || hm.includes('data-tip="Tue') || /data-tip="[A-Z][a-z]{2} \d\d:00 to/.test(hm));
+  assert.ok(hm.includes("published in this slot"));
+  const bars = lib.svgBars([{ label: "2026-08-01", value: 5, tip: "custom\ntip" }]);
+  assert.ok(bars.includes('data-tip="custom\ntip"'));
+});

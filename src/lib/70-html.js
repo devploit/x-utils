@@ -115,11 +115,16 @@ function htmlCell(key, value, row, scale) {
   return htmlEscape(value);
 }
 
-function htmlToolbar(id, count, noun, copyKind) {
+// copyWhat: "handles" (tables with an account column), "links" (posts or
+// tables with a url column) or null (nothing sensible to copy).
+function htmlToolbar(id, count, noun, kind, copyWhat) {
+  const copyButton = copyWhat
+    ? `<button type="button" class="btn" data-copy="${htmlEscape(id)}" data-kind="${kind}" data-what="${copyWhat}" title="Copy the ${copyWhat === "handles" ? "@handles" : "links"} of the rows currently shown">${XU_ICONS.copy}<span>Copy ${copyWhat}</span></button>`
+    : "";
   return `<div class="toolbar">
-    <label class="filter">${XU_ICONS.search}<span class="sr-only">Filter ${htmlEscape(noun)}</span><input type="search" placeholder="Filter ${htmlEscape(count.toLocaleString("en-US"))} ${htmlEscape(noun)}…" data-filter="${htmlEscape(id)}" data-kind="${copyKind}"><kbd title="Press / to search">/</kbd></label>
-    <button type="button" class="btn" data-copy="${htmlEscape(id)}" data-kind="${copyKind}" title="Copy the ${copyKind === "table" ? "handles" : "post links"} of the rows currently shown">${XU_ICONS.copy}<span>Copy ${copyKind === "table" ? "handles" : "links"}</span></button>
-    <button type="button" class="btn btn-quiet" data-csv="${htmlEscape(id)}" data-kind="${copyKind}" title="Download the rows currently shown as CSV">${XU_ICONS.download}<span>CSV</span></button>
+    <label class="filter">${XU_ICONS.search}<span class="sr-only">Filter ${htmlEscape(noun)}</span><input type="search" placeholder="Filter ${htmlEscape(count.toLocaleString("en-US"))} ${htmlEscape(noun)}…" data-filter="${htmlEscape(id)}" data-kind="${kind}"><kbd title="Press / to search">/</kbd></label>
+    ${copyButton}
+    <button type="button" class="btn btn-quiet" data-csv="${htmlEscape(id)}" data-kind="${kind}" title="Download the rows currently shown as CSV">${XU_ICONS.download}<span>CSV</span></button>
   </div>`;
 }
 
@@ -187,7 +192,7 @@ function htmlTableSection({ id, title, columns, rows, note = "", empty = "Nothin
 <section class="block" id="${htmlEscape(id)}">
   <header class="block-head">
     <h2>${htmlEscape(title)}<span class="count num">${rows.length.toLocaleString("en-US")}</span></h2>
-    ${rows.length ? htmlToolbar(id, rows.length, "rows", "table") : ""}
+    ${rows.length ? htmlToolbar(id, rows.length, "rows", "table", cols.includes("handle") ? "handles" : cols.includes("url") ? "links" : null) : ""}
   </header>
   ${note ? `<p class="note">${htmlEscape(note)}</p>` : ""}
   ${rows.length ? htmlChips(id, chips, rows) : ""}
@@ -256,7 +261,7 @@ function htmlCardsSection({ id, title, tweets, note = "", numbered = false, empt
 <section class="block" id="${htmlEscape(id)}">
   <header class="block-head">
     <h2>${htmlEscape(title)}<span class="count num">${tweets.length.toLocaleString("en-US")}</span></h2>
-    ${tweets.length ? htmlToolbar(id, tweets.length, "posts", "cards") : ""}
+    ${tweets.length ? htmlToolbar(id, tweets.length, "posts", "cards", "links") : ""}
   </header>
   ${note ? `<p class="note">${htmlEscape(note)}</p>` : ""}
   ${tweets.length ? `<div class="cards${numbered ? "" : " cards-flow"}" data-cards="${htmlEscape(id)}">${cards}</div><p class="shown" data-shown="${htmlEscape(id)}"></p>` : `<p class="empty">${htmlEscape(empty)}</p>`}
@@ -440,6 +445,9 @@ a.open-text{width:auto;padding:0 8px;font-size:12.5px;font-weight:500;gap:5px}
 .btn-share{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--band-line);background:rgba(255,255,255,.06);color:var(--band-ink);font:500 12.5px/1 var(--sans);cursor:pointer}
 .btn-share:hover{background:rgba(255,255,255,.12)}
 
+.tip{position:fixed;z-index:50;pointer-events:none;max-width:320px;background:var(--ink);color:var(--surface);padding:8px 11px;border-radius:8px;font-size:12.5px;line-height:1.45;box-shadow:0 8px 24px -8px rgba(0,0,0,.45)}
+.tip .tip-head{font-weight:600;margin-bottom:2px}
+.chart [data-tip]{cursor:default}.chart .hm[data-tip]:hover,.chart .bar-v[data-tip]:hover{stroke:var(--ink);stroke-width:1.5}
 .colophon{margin:8px 0 0;font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:space-between}
 .colophon .brand{font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase}
 
@@ -474,6 +482,12 @@ const XU_HTML_JS = `
     rowEl.querySelectorAll(".chip-btn").forEach(function(btn){btn.addEventListener("click",function(){var on=btn.getAttribute("aria-pressed")==="true";
       rowEl.querySelectorAll(".chip-btn").forEach(function(b){b.setAttribute("aria-pressed","false")});
       if(on){activeChip[id]=null}else{btn.setAttribute("aria-pressed","true");activeChip[id]=JSON.parse(btn.dataset.chip)}applyFilters(id,"table")})})});
+  // Chart tooltips: a floating box that follows the pointer over any [data-tip].
+  var tip=document.createElement("div");tip.className="tip";tip.hidden=true;document.body.appendChild(tip);
+  function placeTip(e){var x=e.clientX+14,y=e.clientY+16;var r=tip.getBoundingClientRect();if(x+r.width>window.innerWidth-8)x=e.clientX-r.width-14;if(y+r.height>window.innerHeight-8)y=e.clientY-r.height-12;tip.style.left=x+"px";tip.style.top=y+"px"}
+  document.addEventListener("mouseover",function(e){var el=e.target.closest?e.target.closest("[data-tip]"):null;if(!el)return;tip.innerHTML="";String(el.dataset.tip).split("\\n").forEach(function(line,i){var d=document.createElement("div");if(i===0)d.className="tip-head";d.textContent=line;tip.appendChild(d)});tip.hidden=false;placeTip(e)});
+  document.addEventListener("mousemove",function(e){if(!tip.hidden)placeTip(e)});
+  document.addEventListener("mouseout",function(e){var el=e.target.closest?e.target.closest("[data-tip]"):null;if(el&&!(e.relatedTarget&&el.contains(e.relatedTarget)))tip.hidden=true});
   var shareData=null;try{shareData=JSON.parse(document.getElementById("xu-share").textContent)}catch(e){}
   function wrapText(ctx,text,maxWidth,maxLines){var words=text.split(" "),lines=[],line="";for(var i=0;i<words.length;i++){var t=line?line+" "+words[i]:words[i];if(ctx.measureText(t).width>maxWidth&&line){lines.push(line);line=words[i]}else line=t}if(line)lines.push(line);
     if(lines.length>maxLines){lines=lines.slice(0,maxLines);lines[maxLines-1]=lines[maxLines-1].replace(/\\s+\\S*$/,"")+"…"}return lines}

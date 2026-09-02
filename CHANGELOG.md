@@ -4,6 +4,12 @@ All notable changes to x-utils are recorded here. The format follows [Keep a Cha
 
 ## [Unreleased]
 
+### Fixed
+
+- Report: chart tooltips are now a real hover box (weekday and hour slot with post count and average, per-post date, likes, reposts, replies, views and an excerpt, follower deltas on the trend) instead of the browser's slow SVG titles.
+- Report: the copy button in tables copies handles when there is an account column and links otherwise (label changes to "Copy links"); it disappears when a table has nothing sensible to copy and reports "Nothing to copy" instead of silently copying an empty string.
+- `engagement-report` compares the collected posts with the account's real post count and flags a partial run when X's profile timeline stops early (typically rate-limited after other tools ran).
+
 ## [0.1.0] - 2026-09-02
 
 First public release. Twelve read-only tools that run from the browser console on x.com, with no API keys and nothing leaving the browser. Every tool was verified live against a real account before release.
