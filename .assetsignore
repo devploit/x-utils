@@ -1,0 +1,17 @@
+# Files that must not be published by Cloudflare (everything else in the repo is served as-is)
+.git
+.github
+node_modules
+src
+tests
+scripts
+docs/superpowers
+package.json
+package-lock.json
+wrangler.jsonc
+.assetsignore
+.gitignore
+CHANGELOG.md
+README.md
+SECURITY.md
+LICENSE

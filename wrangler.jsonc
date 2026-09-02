@@ -1,0 +1,12 @@
+// Cloudflare Workers configuration: serve this repository as a static site.
+// Deploy command in the Cloudflare dashboard: npx wrangler deploy
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "x-utils",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  }
+}

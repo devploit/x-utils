@@ -16,7 +16,7 @@ First public release. Twelve read-only tools that run from the browser console o
 - Self-contained HTML report: dark masthead with headline, key figures, proportion bar and a "Share image" button that renders a 1200x630 PNG; sticky section navigation; identity cells with avatars and badges; sortable, filterable tables with magnitude bars, quick-filter chips, "Copy handles" and per-section CSV export; reading cards for posts; inline SVG charts (posting heatmap, per-post bars, account-size histogram, follower trend); light and dark mode; print styles.
 - In-page progress panel on x.com with a read-only preview button when a run finishes (the interactive report is the downloaded file).
 - CSV, JSON and Markdown outputs, with spreadsheet formula neutralisation in CSV.
-- Zero-dependency build (`npm run build`), unit tests and a smoke test of the built files (`npm test`), sample reports from fictional data (`npm run examples`), landing page for Cloudflare Pages, CI and release workflows.
+- Zero-dependency build (`npm run build`), unit tests and a smoke test of the built files (`npm test`), sample reports from fictional data (`npm run examples`), landing page served by Cloudflare (static assets), CI and release workflows.
 
 ### Notes on X's current behaviour
 

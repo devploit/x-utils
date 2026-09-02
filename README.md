@@ -176,7 +176,7 @@ index.html    the landing page (copy buttons fetch dist/ from the same origin)
 .github/      CI (build, test, verify dist/ and examples are fresh) and release on v* tags
 ```
 
-Hosting: the site is static, so any host works. It runs on Cloudflare Pages: connect the repository, no build command, output directory `/`, and attach the domain in the Cloudflare dashboard. The landing page, the sample reports and the `dist/` files are then served from `https://x-utils.com/`; the "Copy script" buttons fetch `dist/` from that same origin.
+Hosting: the site is static, so any host works. It runs on Cloudflare (Workers with static assets): connect the repository, leave the build command empty, set the deploy command to `npx wrangler deploy`, and attach the domain in the Cloudflare dashboard. `wrangler.jsonc` points at the repository root and `.assetsignore` keeps sources and tests out of the published site. The landing page, the sample reports and the `dist/` files are then served from `https://x-utils.com/`; the "Copy script" buttons fetch `dist/` from that same origin.
 
 Releases: tag a commit `vX.Y.Z` after updating `CHANGELOG.md`; the release workflow builds, tests, zips `dist/` and publishes a GitHub release with the changelog section as notes.
 
