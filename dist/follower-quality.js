@@ -1797,12 +1797,22 @@ async function collectTweetTimeline({ label = "tweets", stagnantLimit = 8, delay
     const target = ownerRecord && typeof ownerRecord.tweets === "number" ? Math.min(ownerRecord.tweets, maxItems) : null;
     const kept = () => (counts ? collector.list().filter(counts).length : collector.list().length);
     if (target && !stopWhen && kept() < target * 0.7) {
-      const ops = collector.listOps().filter((n) => /Tweets|Timeline/i.test(n));
+      // Prefer the timeline of the tab we are on: the Replies timeline also
+      // contains the originals, but diluted, so it costs many more pages.
+      const onPostsTab = /^\/[A-Za-z0-9_]+$/.test(startPath);
+      let ops = collector.listOps().filter((n) => /Tweets|Timeline/i.test(n));
+      if (!ops.length) ops = [...xuRequests.keys()].filter((n) => /Tweets|Timeline/i.test(n));
+      const preferred = ops.filter((n) => (onPostsTab ? /Originals|UserTweets$/i.test(n) : /Replies/i.test(n)));
+      ops = [...preferred, ...ops.filter((n) => !preferred.includes(n))];
       const before = kept();
       if (ops.length) {
+        const diluted = onPostsTab && /Replies/i.test(ops[0]);
         xuOverlay.count(`X stopped at ${before.toLocaleString("en-US")} ${label}; requesting the rest directly…`);
-        log.step(`X's page loaded ${collector.list().length} ${label}, ${before} of them count for this report, while the account counter says about ${ownerRecord.tweets}; requesting more pages directly.`);
-        const pages = await replayListPages(ops, () => kept() < target, { fromCursor: true, maxPages: Math.ceil((target - before) / 10) + 2, delayMs: 1200, progress: kept });
+        log.step(`X's page loaded ${collector.list().length} ${label}, ${before} of them count for this report, while the account counter says about ${ownerRecord.tweets}; requesting more pages directly through ${ops[0]}.`);
+        if (diluted) log.step(`X only requested its Replies timeline in front of the tool, so replies come mixed in and get filtered out; this takes more pages and may include a wait for X's 15-minute limit.`);
+        // No fixed page budget: the run ends when the target is reached, when
+        // X stops adding posts, or when the quota is gone (then it waits).
+        const pages = await replayListPages(ops, () => kept() < target, { fromCursor: true, maxPages: 200, delayMs: 1200, progress: kept });
         const after = kept();
         xuDebug.direct = { before, after, pages, ops, target };
         if (after > before) log.info(`Fetched ${pages} more page${pages === 1 ? "" : "s"} directly: ${after - before} additional ${label}.`);
