@@ -183,13 +183,17 @@ function findBottomCursor(json) {
 // like any other. Returns the number of pages fetched.
 // With `fromCursor`, it continues from the last cursor X delivered for that
 // operation instead of starting over.
-async function replayListPages(operationNames, needMore, { maxPages = 6, delayMs = 700, fromCursor = false } = {}) {
+// `progress()` returns how much has been collected; two pages in a row without
+// progress mean X is repeating itself, so the loop stops instead of burning quota.
+async function replayListPages(operationNames, needMore, { maxPages = 6, delayMs = 700, fromCursor = false, progress = null } = {}) {
   const name = operationNames.find((n) => xuRequests.has(n));
   xuDebug.replay = { candidates: operationNames, observed: [...xuRequests.keys()], used: name || null, fromCursor: !!(fromCursor && name && xuCursors.has(name)), pages: [] };
   if (!name) return 0;
   const req = xuRequests.get(name);
   let cursor = fromCursor && xuCursors.has(name) ? xuCursors.get(name) : undefined;
   let waited = false;
+  let lastProgress = progress ? progress() : null;
+  let flatPages = 0;
   let pages = 0;
   while (pages < maxPages && needMore()) {
     let response;
@@ -235,10 +239,24 @@ async function replayListPages(operationNames, needMore, { maxPages = 6, delayMs
     } catch {
       break;
     }
-    cursor = findBottomCursor(json);
+    const nextCursor = findBottomCursor(json);
     // Give the interceptor's own clone().text() chain time to deliver the page.
     await sleep(delayMs);
-    if (!cursor) break;
+    if (progress) {
+      const now = progress();
+      flatPages = now > lastProgress ? 0 : flatPages + 1;
+      lastProgress = now;
+      if (flatPages >= 2) {
+        xuDebug.replay.stoppedBy = "no progress";
+        log.step(`X's last two pages added nothing new; the timeline has no more to give.`);
+        break;
+      }
+    }
+    if (!nextCursor || nextCursor === cursor) {
+      xuDebug.replay.stoppedBy = nextCursor ? "repeated cursor" : "no cursor";
+      break;
+    }
+    cursor = nextCursor;
   }
   await sleep(300);
   return pages;
