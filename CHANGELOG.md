@@ -15,6 +15,7 @@ All notable changes to x-utils are recorded here. The format follows [Keep a Cha
 - Report: the copy button of a table without an account column really copies the post links now (the previous release shipped the old handler, which copied nothing).
 - `engagement-report` states what was collected and what was left out (replies, reposts, other authors, promoted) so the analysed count never looks like a shortfall, and the direct continuation keeps fetching until the analysed posts reach `maxTweets`.
 - Scrolling nudges the page (a short scroll up and down) when X's client goes quiet, before giving up on a list.
+- The direct continuation prefers the timeline of the tab you are on (originals on "Posts"), has no fixed page budget any more, stops when X repeats itself, and waits for the announced reset if X answers 429 half-way. A run on a profile with far more replies than posts no longer ends at whatever 31 pages happened to contain.
 - Spanish action bars: "elementos guardados" is read as the bookmark count.
 - Test fixture from a real 2026 post (a reply, author under `core.user_results`, `views.count`).
 
