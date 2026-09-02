@@ -868,7 +868,7 @@ function findBottomCursor(json) {
 // operation instead of starting over.
 // `progress()` returns how much has been collected; two pages in a row without
 // progress mean X is repeating itself, so the loop stops instead of burning quota.
-async function replayListPages(operationNames, needMore, { maxPages = 6, delayMs = 700, fromCursor = false, progress = null } = {}) {
+async function replayListPages(operationNames, needMore, { maxPages = 6, delayMs = 700, fromCursor = false, progress = null, label = "items" } = {}) {
   const name = operationNames.find((n) => xuRequests.has(n));
   xuDebug.replay = { candidates: operationNames, observed: [...xuRequests.keys()], used: name || null, fromCursor: !!(fromCursor && name && xuCursors.has(name)), pages: [] };
   if (!name) return 0;
@@ -929,6 +929,11 @@ async function replayListPages(operationNames, needMore, { maxPages = 6, delayMs
       const now = progress();
       flatPages = now > lastProgress ? 0 : flatPages + 1;
       lastProgress = now;
+      // Keep the panel and console alive between pages: this can take minutes.
+      const quota = xuDebug.quota[name];
+      const left = quota && typeof quota.remaining === "number" ? ` · ${quota.remaining} request${quota.remaining === 1 ? "" : "s"} left before X's limit` : "";
+      xuOverlay.count(`Working… page ${pages} requested · ${now.toLocaleString("en-US")} ${label} so far${left}`);
+      if (pages % 5 === 0) log.step(`Still working: ${pages} pages requested, ${now} ${label} so far${left}.`);
       if (flatPages >= 2) {
         xuDebug.replay.stoppedBy = "no progress";
         log.step(`X's last two pages added nothing new; the timeline has no more to give.`);
@@ -1811,7 +1816,7 @@ async function collectTweetTimeline({ label = "tweets", stagnantLimit = 8, delay
         if (diluted) log.step(`X only requested its Replies timeline in front of the tool, so replies come mixed in and get filtered out; this takes more pages and may include a wait for X's 15-minute limit.`);
         // No fixed page budget: the run ends when the target is reached, when
         // X stops adding posts, or when the quota is gone (then it waits).
-        const pages = await replayListPages(ops, () => kept() < target, { fromCursor: true, maxPages: 200, delayMs: 1200, progress: kept });
+        const pages = await replayListPages(ops, () => kept() < target, { fromCursor: true, maxPages: 200, delayMs: 1200, progress: kept, label });
         const after = kept();
         xuDebug.direct = { before, after, pages, ops, target };
         if (after > before) log.info(`Fetched ${pages} more page${pages === 1 ? "" : "s"} directly: ${after - before} additional ${label}.`);

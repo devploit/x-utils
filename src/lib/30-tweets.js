@@ -365,7 +365,7 @@ async function collectTweetTimeline({ label = "tweets", stagnantLimit = 8, delay
         if (diluted) log.step(`X only requested its Replies timeline in front of the tool, so replies come mixed in and get filtered out; this takes more pages and may include a wait for X's 15-minute limit.`);
         // No fixed page budget: the run ends when the target is reached, when
         // X stops adding posts, or when the quota is gone (then it waits).
-        const pages = await replayListPages(ops, () => kept() < target, { fromCursor: true, maxPages: 200, delayMs: 1200, progress: kept });
+        const pages = await replayListPages(ops, () => kept() < target, { fromCursor: true, maxPages: 200, delayMs: 1200, progress: kept, label });
         const after = kept();
         xuDebug.direct = { before, after, pages, ops, target };
         if (after > before) log.info(`Fetched ${pages} more page${pages === 1 ? "" : "s"} directly: ${after - before} additional ${label}.`);

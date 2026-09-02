@@ -185,7 +185,7 @@ function findBottomCursor(json) {
 // operation instead of starting over.
 // `progress()` returns how much has been collected; two pages in a row without
 // progress mean X is repeating itself, so the loop stops instead of burning quota.
-async function replayListPages(operationNames, needMore, { maxPages = 6, delayMs = 700, fromCursor = false, progress = null } = {}) {
+async function replayListPages(operationNames, needMore, { maxPages = 6, delayMs = 700, fromCursor = false, progress = null, label = "items" } = {}) {
   const name = operationNames.find((n) => xuRequests.has(n));
   xuDebug.replay = { candidates: operationNames, observed: [...xuRequests.keys()], used: name || null, fromCursor: !!(fromCursor && name && xuCursors.has(name)), pages: [] };
   if (!name) return 0;
@@ -246,6 +246,11 @@ async function replayListPages(operationNames, needMore, { maxPages = 6, delayMs
       const now = progress();
       flatPages = now > lastProgress ? 0 : flatPages + 1;
       lastProgress = now;
+      // Keep the panel and console alive between pages: this can take minutes.
+      const quota = xuDebug.quota[name];
+      const left = quota && typeof quota.remaining === "number" ? ` · ${quota.remaining} request${quota.remaining === 1 ? "" : "s"} left before X's limit` : "";
+      xuOverlay.count(`Working… page ${pages} requested · ${now.toLocaleString("en-US")} ${label} so far${left}`);
+      if (pages % 5 === 0) log.step(`Still working: ${pages} pages requested, ${now} ${label} so far${left}.`);
       if (flatPages >= 2) {
         xuDebug.replay.stoppedBy = "no progress";
         log.step(`X's last two pages added nothing new; the timeline has no more to give.`);
