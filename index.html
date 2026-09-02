@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>x-utils · see who does not follow you back on X, free</title>
+<meta name="description" content="See who does not follow you back on X, find out which of your posts actually work, export your bookmarks and spot fake followers. Free, in your browser, without paying for X's API. No password, no install.">
+<meta property="og:title" content="x-utils · free tools for your X account">
+<meta property="og:description" content="Who does not follow you back, which posts actually work, bookmarks export, fake follower detection. Free, without paying for X's API. No password, no install, nothing leaves your browser.">
+<meta property="og:image" content="https://x-utils.com/docs/assets/social-preview.png">
+<meta property="og:url" content="https://x-utils.com/">
+<meta property="og:type" content="website">
+<link rel="canonical" href="https://x-utils.com/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="x-utils · free tools for your X account">
+<meta name="twitter:description" content="Who does not follow you back, which posts actually work, bookmarks export, fake follower detection. Free, without paying for X's API. No password, no install, nothing leaves your browser.">
+<meta name="twitter:image" content="https://x-utils.com/docs/assets/social-preview.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%230d1220%22%2F%3E%3Cpath%20d%3D%22M8%208l16%2016M24%208L8%2024%22%20stroke%3D%22%23b3a6ff%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E">
+<style>
+:root{--band:#0d1220;--band-2:#161d33;--band-ink:#f4f6fb;--band-muted:#8f9ab3;--ground:#eef0f4;--surface:#fff;--surface-2:#f6f7fa;--ink:#0d1220;--muted:#66708a;--line:#e3e6ee;--accent:#5b3df5;--accent-soft:rgba(91,61,245,.12);--good:#12805c;--good-soft:rgba(18,128,92,.12);--bad:#d2481d;--warn:#a86b0f;--warn-soft:rgba(168,107,15,.14);--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;--shadow:0 1px 2px rgba(13,18,32,.06),0 12px 32px -16px rgba(13,18,32,.18)}
+@media (prefers-color-scheme:dark){:root{--band:#080b14;--band-2:#0f1424;--ground:#0b0f19;--surface:#121826;--surface-2:#171e2e;--ink:#e8ecf5;--muted:#8d97ad;--line:#222b3d;--accent:#a394ff;--accent-soft:rgba(163,148,255,.16);--good:#4fd39b;--good-soft:rgba(79,211,155,.14);--bad:#ff9a6c;--warn:#e2b35c;--warn-soft:rgba(226,179,92,.16);--shadow:0 1px 2px rgba(0,0,0,.4),0 16px 40px -20px rgba(0,0,0,.8)}}
+*{box-sizing:border-box}html{scroll-behavior:smooth}@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--ground);color:var(--ink);font:16px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+svg{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.15em}
+.wrap{max-width:1120px;margin:0 auto;padding:0 28px}
+.mono{font-family:var(--mono)}
+kbd{font:500 12.5px var(--mono);padding:2px 7px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;background:var(--surface-2);color:var(--ink);white-space:nowrap}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* masthead */
+.band{background:radial-gradient(900px 360px at 12% -20%,rgba(120,96,255,.35),transparent 65%),radial-gradient(700px 300px at 95% 10%,rgba(46,196,182,.18),transparent 60%),linear-gradient(180deg,var(--band-2),var(--band));color:var(--band-ink);padding:28px 0 72px}
+.nav{display:flex;justify-content:space-between;align-items:center;gap:16px;color:var(--band-muted)}
+.nav .brand{display:inline-flex;align-items:center;gap:10px;color:var(--band-ink);font:700 18px/1 var(--sans);letter-spacing:-.02em;text-decoration:none!important}
+.nav .brand i{width:14px;height:14px;border-radius:4px;background:linear-gradient(135deg,#b3a6ff,#5ee0a8)}
+.nav .brand:hover{color:#b3a6ff}
+.nav .links{display:flex;align-items:center;gap:4px;font:500 13.5px var(--sans)}
+.nav .links a{color:var(--band-muted);padding:7px 11px;border-radius:8px;text-decoration:none}
+.nav .links a:hover{color:var(--band-ink);background:rgba(255,255,255,.06)}
+.nav .links a.active{color:var(--band-ink);background:rgba(255,255,255,.08)}
+.nav .links a.go{background:#b3a6ff;color:#0d1220;font-weight:650;margin-left:6px}.nav .links a.go:hover{background:#c4baff}
+.hero{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:40px;align-items:end;padding:56px 0 0}
+.hero h1{margin:0 0 16px;font-size:clamp(34px,4.6vw,56px);font-weight:750;letter-spacing:-.035em;line-height:1.02;text-wrap:balance}
+.hero p{margin:0 0 22px;font-size:18px;color:var(--band-muted);max-width:52ch}
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:26px}
+.pill{display:inline-flex;align-items:center;gap:6px;font:500 12.5px var(--mono);padding:5px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.14);color:#c7cede}
+.pill svg{color:#5ee0a8}
+.cta{display:inline-flex;align-items:center;gap:8px;height:46px;padding:0 18px;border-radius:10px;background:#b3a6ff;color:#0d1220;font-weight:650;text-decoration:none!important}
+.cta:hover{background:#c4baff}
+.cta.quiet{background:rgba(255,255,255,.08);color:var(--band-ink);margin-left:8px}
+.hero-shot{position:relative;border-radius:14px;overflow:hidden;box-shadow:0 30px 80px -30px rgba(0,0,0,.8);border:1px solid rgba(255,255,255,.1);transform:translateY(104px)}
+.hero-shot img{display:block;width:100%}
+
+/* content */
+.content{padding:96px 0 64px}
+h2{font-size:28px;letter-spacing:-.02em;margin:0 0 6px}
+h3{font-size:18px;letter-spacing:-.01em;margin:0 0 8px}
+.lead{color:var(--muted);margin:0 0 24px;max-width:70ch;font-size:16.5px}
+section{margin-bottom:72px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+
+/* three-beat explanation */
+.beats{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.beat{padding:20px 22px}
+.beat .ic{display:inline-grid;place-items:center;width:38px;height:38px;border-radius:10px;background:var(--accent-soft);color:var(--accent);font-size:18px;margin-bottom:12px}
+.beat p{margin:0;color:var(--muted);font-size:15px}
+
+/* guided setup */
+.guide{padding:0;overflow:hidden}
+.guide-head{padding:22px 24px 18px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:16px 28px;align-items:flex-start}
+.field{display:flex;flex-direction:column;gap:6px;min-width:220px;flex:1}
+.field label{font-size:13px;font-weight:600;color:var(--muted)}
+.field select,.field .inp{font:inherit;height:44px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--ink);width:100%}
+.field .inp{display:flex;align-items:center;gap:4px;padding:0 12px}
+.field .inp span{color:var(--muted);font-family:var(--mono);font-size:14px}
+.field .inp input{border:0;background:transparent;font:inherit;color:var(--ink);width:100%;outline:none;font-family:var(--mono)}
+.field:focus-within select,.field:focus-within .inp{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.field .hint{font-size:12.5px;color:var(--muted)}
+.gsteps{counter-reset:g}
+.gstep{display:grid;grid-template-columns:56px minmax(0,1fr);gap:0 18px;padding:22px 24px;border-bottom:1px solid var(--line)}
+.gstep.has-aside{grid-template-columns:56px minmax(0,1fr) minmax(0,460px)}
+.gstep .aside{grid-column:3;align-self:start}
+.gstep .aside .mock,.gstep .aside .panel-mock{margin-top:0}
+.gstep:last-child{border-bottom:0}
+.gstep::before{counter-increment:g;content:counter(g);display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--ink);color:var(--surface);font:700 16px var(--mono)}
+.gstep h3{margin:6px 0 6px}
+.gstep p{margin:0 0 12px;color:var(--muted);font-size:15.5px;max-width:64ch}
+.gstep p:last-child{margin-bottom:0}
+.gstep .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 15px var(--sans);cursor:pointer;text-decoration:none!important;white-space:nowrap}
+.btn:hover{background:var(--surface-2)}.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}.btn.primary:hover{filter:brightness(.94)}.btn.done{border-color:var(--good);color:var(--good);background:var(--good-soft)}
+.btn.sm{height:34px;padding:0 12px;font-size:13.5px;font-weight:500}
+.btn.use{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--line));background:var(--surface)}.btn.use:hover{background:var(--accent-soft)}
+.tool.featured .btn.use{background:var(--accent);border-color:var(--accent);color:#fff}
+.urlbox{display:inline-flex;align-items:center;gap:0;font:14px var(--mono);padding:10px 14px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink);word-break:break-all}
+.urlbox .ph{color:var(--accent);background:var(--accent-soft);border-radius:5px;padding:0 5px}
+.btn.disabled{opacity:.55;pointer-events:none}
+.need-handle{font-size:13.5px;color:var(--warn);margin:8px 0 0}
+.tabs{display:inline-flex;gap:4px;padding:4px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);margin-bottom:12px}
+.tabs button{font:500 13.5px var(--sans);padding:7px 12px;border:0;border-radius:7px;background:transparent;color:var(--muted);cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.keys{font-size:15.5px;line-height:2;margin:2px 0 8px}.keys kbd{margin:0 2px}.keys[hidden]{display:none}
+.note{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:10px;background:var(--warn-soft);color:var(--ink);font-size:14.5px;max-width:64ch}
+.note svg{flex:0 0 auto;color:var(--warn);margin-top:3px}
+.note.good{background:var(--good-soft)}.note.good svg{color:var(--good)}
+
+/* mocks */
+.mock{margin-top:14px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#1e1e1e;color:#d4d4d4;font:13px/1.5 var(--mono);max-width:640px;box-shadow:var(--shadow)}
+.mock .bar{display:flex;gap:2px;padding:6px 8px 0;background:#2b2b2b;border-bottom:1px solid #3a3a3a;font:12.5px var(--sans);color:#a9a9a9}
+.mock .bar span{padding:6px 10px;border-radius:6px 6px 0 0}
+.mock .bar .on{background:#1e1e1e;color:#fff;box-shadow:inset 0 -2px 0 #b3a6ff}
+.mock .body{padding:12px 14px;min-height:96px;white-space:pre-wrap;word-break:break-word}
+.mock .warn{color:#e9c46a}.mock .prompt{color:#7c7cff}.mock .dim{color:#7a7a7a}.mock .ok{color:#5ee0a8}
+.mock .caret{display:inline-block;width:8px;height:15px;background:#d4d4d4;vertical-align:-3px;margin-left:2px}
+.panel-mock{margin-top:14px;width:320px;max-width:100%;background:#0d1220;color:#f4f6fb;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 16px 12px;font:13.5px/1.45 var(--sans);box-shadow:0 20px 50px -20px rgba(0,0,0,.6)}
+.panel-mock .h{display:flex;align-items:center;gap:10px;margin-bottom:8px;font:600 11.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:#c7cede}
+.panel-mock .h i{width:10px;height:10px;border-radius:3px;background:linear-gradient(135deg,#b3a6ff,#5ee0a8)}
+.panel-mock .s{color:#5ee0a8}
+.panel-mock .p{height:4px;border-radius:2px;background:linear-gradient(90deg,#b3a6ff,#5ee0a8);margin:10px 0 8px}
+.panel-mock .f{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#8f9ab3}
+.panel-mock .f{gap:12px}.panel-mock .f b{background:#b3a6ff;color:#0d1220;border-radius:8px;padding:6px 11px;font-size:12.5px;white-space:nowrap;flex:0 0 auto}
+
+/* tools */
+.tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.tool{padding:18px 18px 14px;display:flex;flex-direction:column;gap:8px}
+.tool.featured{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.tool h3{margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tool .tag{font:500 10.5px var(--mono);padding:2px 7px;border-radius:5px;background:var(--accent-soft);color:var(--accent);text-transform:uppercase;letter-spacing:.06em}
+.tool .tag-slow{background:var(--warn-soft);color:var(--warn)}
+.tool p{margin:0;color:var(--muted);font-size:14.5px;flex:1}
+.tool .page{font:12.5px var(--mono);color:var(--muted);word-break:break-all}
+.tool .row{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+.group{font:600 12px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:26px 0 12px}
+.group:first-of-type{margin-top:0}
+
+/* gallery */
+.gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.gallery a{display:block;overflow:hidden;color:inherit;text-decoration:none!important}
+.gallery img{display:block;width:100%;aspect-ratio:3/2;object-fit:cover;object-position:top}
+.gallery b{display:block;padding:12px 14px 4px}.gallery span{display:block;padding:0 14px 12px;color:var(--muted);font-size:13.5px}
+
+/* safety */
+.safety{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.safety .card{padding:18px 20px}
+.safety .card b{display:flex;align-items:center;gap:8px;margin-bottom:6px}.safety .card b svg{color:var(--good)}
+.safety .card p{margin:0;color:var(--muted);font-size:14.5px}
+
+/* troubleshooting + faq */
+details{border-top:1px solid var(--line)}
+details:last-of-type{border-bottom:1px solid var(--line)}
+summary{cursor:pointer;padding:14px 0;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:12px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";color:var(--muted);font-weight:400;font-size:20px;line-height:1}
+details[open] summary::after{content:"–"}
+details p{margin:0 0 14px;color:var(--muted);font-size:15px;max-width:72ch}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:0 40px}
+
+footer{color:var(--muted);font-size:13px;display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:space-between;padding-top:22px;border-top:1px solid var(--line)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:.2s;max-width:calc(100vw - 32px);text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.phone-note{display:none;margin-top:14px}
+@media (max-width:860px){.nav .links a[data-nav],.nav .links a[href*="github"]{display:none}.hero{grid-template-columns:1fr;gap:12px;padding-top:36px}.band{padding-bottom:44px}.hero-shot{transform:translateY(64px)}.wrap{padding:0 18px}.content{padding:104px 18px 56px}.nav{flex-wrap:wrap;gap:8px 12px}.nav .brand{white-space:nowrap}.gstep,.gstep.has-aside{grid-template-columns:1fr}.gstep .aside{grid-column:1;margin-top:14px}.gstep::before{margin-bottom:8px}.cta.quiet{margin-left:0;margin-top:8px}}
+@media (max-width:640px){.phone-note{display:flex}}
+</style>
+</head>
+<body>
+<header class="band">
+  <div class="wrap">
+    <nav class="nav" aria-label="Main"><a class="brand" href="/" title="x-utils home"><i></i>x-utils</a><span class="links"><a href="#how" data-nav="how">How it works</a><a href="#tools" data-nav="tools">Tools</a><a href="#examples" data-nav="examples">Examples</a><a href="#safety" data-nav="safety">Safety</a><a href="#help" data-nav="help">Help</a><a href="https://github.com/devploit/x-utils" target="_blank" rel="noopener">GitHub</a><a class="go" href="#start">Start</a></span></nav>
+    <div class="hero">
+      <div>
+        <h1>See who does not follow you back on X. Find out which posts actually work.</h1>
+        <p>Everything the paid "who unfollowed me" apps sell, without paying for X's API. You paste one thing into your browser, wait a minute, and get a report you can sort, search and share. No password, no install, no servers, no subscription.</p>
+        <div class="pills"><span class="pill"><svg viewBox="0 0 24 24"><path d="M5 12.5 9.5 17 19 7"/></svg>no X API to pay for</span><span class="pill"><svg viewBox="0 0 24 24"><path d="M5 12.5 9.5 17 19 7"/></svg>no install</span><span class="pill"><svg viewBox="0 0 24 24"><path d="M5 12.5 9.5 17 19 7"/></svg>password never asked</span><span class="pill"><svg viewBox="0 0 24 24"><path d="M5 12.5 9.5 17 19 7"/></svg>changes nothing on your account</span><span class="pill"><svg viewBox="0 0 24 24"><path d="M5 12.5 9.5 17 19 7"/></svg>nothing leaves your computer</span></div>
+        <a class="cta" href="#start">Start, it takes a minute</a><a class="cta quiet" href="#examples">See a sample report</a>
+      </div>
+      <a class="hero-shot" href="docs/examples/non-followers.html" aria-label="Open a sample report"><img src="docs/assets/report-non-followers.png" alt="Sample report: accounts that do not follow back, with figures, a proportion bar and a sortable table"></a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap content">
+  <section id="how">
+    <h2>How it works, in plain words</h2>
+    <p class="lead">Everything these tools show you is already on your screen when you scroll through X. They just do the scrolling and the note-taking for you. That is why there is nothing to pay: the expensive part, X's API, is never used.</p>
+    <div class="beats">
+      <div class="card beat"><span class="ic">1</span><h3>You open a page on X</h3><p>Your following list, your followers, your bookmarks, or your profile. You are already logged in, nothing else is needed.</p></div>
+      <div class="card beat"><span class="ic">2</span><h3>You paste a small script</h3><p>Into a panel every browser has, called the console. It scrolls the page for you and reads what X shows. It cannot see your password and it sends nothing anywhere.</p></div>
+      <div class="card beat"><span class="ic">3</span><h3>You get a report</h3><p>A page with the answer in one sentence, the numbers, and a table you can sort and search. Plus a spreadsheet, if you want one.</p></div>
+    </div>
+  </section>
+
+  <section id="start">
+    <h2>Guided setup</h2>
+    <p class="lead">Pick what you want to know and type your X username. The steps below adapt to you.</p>
+    <div class="card guide">
+      <div class="guide-head">
+        <div class="field"><label for="tool">What do you want to know?</label>
+          <select id="tool">
+            <optgroup label="Your relationships">
+              <option value="non-followers" selected>Who I follow that does not follow me back</option>
+              <option value="fans">Who follows me that I do not follow back</option>
+              <option value="followers-diff">Who unfollowed me since last time</option>
+              <option value="follower-quality">Which of my followers look like bots</option>
+              <option value="inactive-following">Who I follow that stopped posting</option>
+              <option value="blocked-muted-export">A copy of my blocked or muted lists</option>
+            </optgroup>
+            <optgroup label="Your content">
+              <option value="engagement-report">Which of my posts actually work</option>
+              <option value="bookmarks-export">All my bookmarks in one readable file</option>
+              <option value="likes-export">Everything I liked, in one file</option>
+              <option value="thread-unroll">A whole thread as clean text</option>
+              <option value="search-export">The results of a search, as a spreadsheet</option>
+              <option value="list-members-export">Everyone on a List</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="field" id="handle-field"><label for="handle">Your X username</label><div class="inp"><span>@</span><input id="handle" placeholder="yourname" autocomplete="off" spellcheck="false" maxlength="15"></div><span class="hint">Only used to build the link below. It stays in this page.</span></div>
+      </div>
+      <div class="gsteps">
+        <div class="gstep">
+          <div><h3>On a computer, log in to X and open this page</h3>
+            <p id="page-help">The tool needs your following list on screen.</p>
+            <p>If the page was already open, reload it (F5) right before pasting: the tool reads the list as X loads it.</p>
+            <div class="row"><a class="btn primary" id="open-page" href="https://x.com/" target="_blank" rel="noopener">Open the page on X</a><span class="urlbox" id="page-url">x.com/yourname/following</span></div>
+            <p class="need-handle" id="need-handle" hidden>Type your X username above and this link will point at your own list.</p>
+            <div class="note phone-note"><svg viewBox="0 0 24 24"><path d="M12 8v5m0 3v.01M10.3 3.9 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg><span>You seem to be on a phone. Phones have no console, so this only works on a computer. Send yourself this link and continue there.</span></div>
+          </div>
+        </div>
+        <div class="gstep has-aside">
+          <div><h3>Open the browser console</h3>
+            <p>The console is a panel built into every browser. Nothing gets installed.</p>
+            <div class="tabs" role="tablist" aria-label="Your system"><button role="tab" aria-selected="true" data-os="mac">Mac</button><button role="tab" aria-selected="false" data-os="win">Windows</button><button role="tab" aria-selected="false" data-os="linux">Linux</button></div>
+            <div class="keys" id="keys-mac">Press <kbd>Cmd ⌘</kbd> + <kbd>Option ⌥</kbd> + <kbd>I</kbd>, then click the tab called <b>Console</b>.</div>
+            <div class="keys" id="keys-win" hidden>Press <kbd>F12</kbd> (or <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd>), then click the tab called <b>Console</b>.</div>
+            <div class="keys" id="keys-linux" hidden>Press <kbd>F12</kbd> (or <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd>), then click the tab called <b>Console</b>.</div>
+            <p>A panel opens at the side or bottom of the page. It looks roughly like the dark box shown here, and the line with the <span class="mono">&gt;</span> is where you will paste.</p>
+          </div>
+          <div class="aside"><div class="mock" aria-hidden="true"><div class="bar"><span>Elements</span><span class="on">Console</span><span>Sources</span><span>Network</span></div><div class="body"><span class="dim">Console was cleared</span>
+<span class="prompt">&gt;</span> <span class="caret"></span></div></div></div>
+        </div>
+        <div class="gstep">
+          <div><h3>Copy the script</h3>
+            <p id="copy-help">This copies the whole tool to your clipboard. It is plain text you can read.</p>
+            <div class="row"><button class="btn primary" id="copy-current" data-copy-current><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg><span>Copy the script</span></button><a class="btn" id="open-current" href="dist/non-followers.js" target="_blank" rel="noopener">Open it as a file instead</a></div>
+          </div>
+        </div>
+        <div class="gstep has-aside">
+          <div><h3>Paste it in the console and press Enter</h3>
+            <p>Click on the line with the <span class="mono">&gt;</span>, paste with <kbd>Cmd</kbd> + <kbd>V</kbd> on a Mac or <kbd>Ctrl</kbd> + <kbd>V</kbd> elsewhere, and press <kbd>Enter</kbd>.</p>
+            <div class="note"><svg viewBox="0 0 24 24"><path d="M12 8v5m0 3v.01M10.3 3.9 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg><span><b>The first time, the browser will refuse</b> and show a warning asking you to type <span class="mono">allow pasting</span>. That is normal: it is the browser making sure you know what you are pasting. Type exactly <span class="mono">allow pasting</span>, press Enter, and paste again.</span></div>
+          </div>
+          <div class="aside"><div class="mock" aria-hidden="true"><div class="bar"><span>Elements</span><span class="on">Console</span><span>Sources</span><span>Network</span></div><div class="body"><span class="warn">⚠ Warning: Don't paste code into the DevTools Console that you don't understand or haven't reviewed yourself. This could allow attackers to steal your identity or take control of your computer. Please type 'allow pasting' below and hit Enter to allow pasting.</span>
+<span class="prompt">&gt;</span> allow pasting<span class="caret"></span></div></div></div>
+        </div>
+        <div class="gstep has-aside">
+          <div><h3>Wait, then open your report</h3>
+            <p>A small panel appears in the corner of the X page and the page starts scrolling by itself. Keep that tab in front.</p>
+            <div class="note good" id="time-note"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="time-help">Usually 1 to 3 minutes.</span></div>
+            <p>When it finishes, the panel shows the result and an <b>Preview (read-only)</b> button. The full interactive report and a spreadsheet are saved in your Downloads folder; open the .html file from there to filter, sort and export.</p>
+          </div>
+          <div class="aside"><div class="panel-mock" aria-hidden="true"><div class="h"><i></i>x-utils · non-followers</div><div class="s">812 following · 540 mutuals · 272 not following back</div><div class="p"></div><div class="f"><span>Files are in your Downloads folder</span><b>Preview</b></div></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tools">
+    <h2>All the tools</h2>
+    <p class="lead">Every tool only reads. None of them follows, unfollows, blocks, likes, posts or deletes anything. Some take a while because X limits how fast lists and profiles can be read; those are marked, and the tool waits through the pauses for you.</p>
+    <div class="group">Your relationships</div>
+    <div class="tools">
+      <article class="card tool featured"><h3>Non-followers <span class="tag">most used</span></h3><p>Who you follow that does not follow you back, with how big and how old each account is.</p><span class="page">Needs: your following list</span><div class="row"><button class="btn sm use" data-use="non-followers">Use this</button><button class="btn sm" data-copy="non-followers">Copy script</button></div></article>
+      <article class="card tool"><h3>Fans <span class="tag tag-slow">pauses on big lists</span></h3><p>Who follows you that you do not follow back.</p><span class="page">Needs: your followers list</span><div class="row"><button class="btn sm use" data-use="fans">Use this</button><button class="btn sm" data-copy="fans">Copy script</button></div></article>
+      <article class="card tool"><h3>Who unfollowed me <span class="tag tag-slow">pauses on big lists</span></h3><p>Run it today and again later: who left, who is new, who changed their name, and a chart over time.</p><span class="page">Needs: your followers list</span><div class="row"><button class="btn sm use" data-use="followers-diff">Use this</button><button class="btn sm" data-copy="followers-diff">Copy script</button></div></article>
+      <article class="card tool"><h3>Follower quality <span class="tag tag-slow">pauses on big lists</span></h3><p>Every follower scored with bot signals. Suspicious ones first, and it tells you why.</p><span class="page">Needs: your followers list</span><div class="row"><button class="btn sm use" data-use="follower-quality">Use this</button><button class="btn sm" data-copy="follower-quality">Copy script</button></div></article>
+      <article class="card tool"><h3>Who stopped posting <span class="tag tag-slow">slow: X limits it</span></h3><p>Accounts you follow that have not posted in months, or ever. Checks the ones that do not follow you back by default (edit the script to check everyone). X allows about 50 checks per 15 minutes; longer lists run in batches with pauses.</p><span class="page">Needs: your following list</span><div class="row"><button class="btn sm use" data-use="inactive-following">Use this</button><button class="btn sm" data-copy="inactive-following">Copy script</button></div></article>
+      <article class="card tool"><h3>Blocked and muted lists</h3><p>A copy of your blocked or muted accounts, so they exist somewhere X cannot take away.</p><span class="page">Needs: your blocked or muted settings page</span><div class="row"><button class="btn sm use" data-use="blocked-muted-export">Use this</button><button class="btn sm" data-copy="blocked-muted-export">Copy script</button></div></article>
+    </div>
+    <div class="group">Your content</div>
+    <div class="tools">
+      <article class="card tool featured"><h3>Engagement report <span class="tag">most shared</span></h3><p>Your posts ranked by likes, views and engagement rate, with a heatmap of when your posts perform best. Works on any public profile.</p><span class="page">Needs: a profile page</span><div class="row"><button class="btn sm use" data-use="engagement-report">Use this</button><button class="btn sm" data-copy="engagement-report">Copy script</button></div></article>
+      <article class="card tool"><h3>Bookmarks</h3><p>Every bookmark as a readable page, a file for your notes app and a spreadsheet.</p><span class="page">Needs: your bookmarks page</span><div class="row"><button class="btn sm use" data-use="bookmarks-export">Use this</button><button class="btn sm" data-copy="bookmarks-export">Copy script</button></div></article>
+      <article class="card tool"><h3>Likes</h3><p>The same for everything you liked.</p><span class="page">Needs: your likes page</span><div class="row"><button class="btn sm use" data-use="likes-export">Use this</button><button class="btn sm" data-copy="likes-export">Copy script</button></div></article>
+      <article class="card tool"><h3>Thread unroll</h3><p>A whole thread as clean text, from any post in it.</p><span class="page">Needs: any post of the thread</span><div class="row"><button class="btn sm use" data-use="thread-unroll">Use this</button><button class="btn sm" data-copy="thread-unroll">Copy script</button></div></article>
+      <article class="card tool"><h3>Search results</h3><p>Any search, including advanced operators, as a spreadsheet.</p><span class="page">Needs: a search results page</span><div class="row"><button class="btn sm use" data-use="search-export">Use this</button><button class="btn sm" data-copy="search-export">Copy script</button></div></article>
+      <article class="card tool"><h3>List members</h3><p>Everyone on any List, flagged with whether you follow them and whether they follow you.</p><span class="page">Needs: a List members page</span><div class="row"><button class="btn sm use" data-use="list-members-export">Use this</button><button class="btn sm" data-copy="list-members-export">Copy script</button></div></article>
+    </div>
+  </section>
+
+  <section id="examples">
+    <h2>See a report before running anything</h2>
+    <p class="lead">These are real reports built from made-up accounts and posts. Sort the tables, type in the filters, press the buttons.</p>
+    <div class="gallery">
+      <a class="card" href="docs/examples/non-followers.html"><img src="docs/assets/report-non-followers.png" alt=""><b>Who does not follow back</b><span>Numbers, proportion bar, account sizes, table</span></a>
+      <a class="card" href="docs/examples/engagement-report.html"><img src="docs/assets/report-engagement.png" alt=""><b>Engagement report</b><span>Best hour to post, top posts, charts</span></a>
+      <a class="card" href="docs/examples/followers-diff.html"><img src="docs/assets/report-followers-diff.png" alt=""><b>Who unfollowed me</b><span>Left, new, renamed, trend over time</span></a>
+      <a class="card" href="docs/examples/follower-quality.html"><img src="docs/assets/report-follower-quality-dark.png" alt=""><b>Follower quality</b><span>Bot signals, scores, reasons</span></a>
+      <a class="card" href="docs/examples/bookmarks-export.html"><img src="docs/assets/report-bookmarks.png" alt=""><b>Bookmarks</b><span>Reading cards with media and numbers</span></a>
+    </div>
+  </section>
+
+  <section id="safety">
+    <h2>Why this is safe</h2>
+    <p class="lead">Pasting things into a console is a bad habit in general. Here is why it is fine here, and how you can check it yourself.</p>
+    <div class="safety">
+      <div class="card"><b><svg viewBox="0 0 24 24"><path d="M5 12.5 9.5 17 19 7"/></svg>No password, ever</b><p>The script runs inside the X tab where you are already logged in. It never asks for, reads or stores your password, cookies or keys.</p></div>
+      <div class="card"><b><svg viewBox="0 0 24 24"><path d="M5 12.5 9.5 17 19 7"/></svg>Nothing is sent anywhere</b><p>There is no server behind this. The report and the spreadsheet are written straight into your Downloads folder. Search the script for "http" and you will only find x.com.</p></div>
+      <div class="card"><b><svg viewBox="0 0 24 24"><path d="M5 12.5 9.5 17 19 7"/></svg>It only reads</b><p>No tool follows, unfollows, blocks, likes, posts or deletes. It scrolls and takes notes, like a very fast assistant looking at your screen.</p></div>
+      <div class="card"><b><svg viewBox="0 0 24 24"><path d="M5 12.5 9.5 17 19 7"/></svg>Anyone can read it</b><p>The code is open, short, in plain JavaScript, and published on GitHub. If you know a developer, ask them to look. That is exactly what the console warning is for.</p></div>
+    </div>
+  </section>
+
+  <section id="help">
+    <h2>Something did not work</h2>
+    <p class="lead">The usual suspects, in order of how often they happen.</p>
+    <div class="two">
+      <div>
+        <details><summary>The console says "allow pasting"</summary><p>Type exactly <span class="mono">allow pasting</span>, press Enter, then paste the script again. The browser only asks once.</p></details>
+        <details><summary>I pasted it and nothing happened</summary><p>Make sure you pressed Enter after pasting, and that you pasted in the Console tab, not in another tab of the panel. If the console shows a red message saying "This tool must run on…", you are on the wrong X page: it tells you which one to open.</p></details>
+        <details><summary>It stopped halfway or says "Something went wrong"</summary><p>That is X limiting how fast a list can be read. The tool notices, shows a countdown in its panel and retries with growing pauses (up to about ten minutes in total) before giving up. If it gives up, it saves what it has and tells you; wait 15 minutes and run it again. On very large lists you can also raise <span class="mono">scrollDelayMs</span> at the top of the script to 1500 or more.</p></details>
+        <details><summary>It ran, but I cannot find the files</summary><p>Look in your browser's downloads (the arrow icon near the address bar). The first time, the browser may ask permission to download several files at once: allow it. The panel in the corner of the page also has an <b>Preview</b> button.</p></details>
+      </div>
+      <div>
+        <details><summary>How long does it take?</summary><p>It depends on how many accounts or posts there are. Up to a few hundred: about a minute. Around a thousand: a few minutes. Several thousand followers: X pauses the list every so often for minutes at a time; the tool tells you how long before you start, waits through the pauses with a countdown, and if X refuses for good it saves what it has so you can run again 15 minutes later. Keep the tab open and in front while it runs.</p></details>
+        <details><summary>I am on a phone</summary><p>Phones do not have a console, so this only works on a computer with Chrome, Edge, Brave, Arc or Firefox. Send yourself this link and continue there.</p></details>
+        <details><summary>My X is not in English</summary><p>The tools recognise the interface in English, Spanish, French, German, Italian, Portuguese and a few more. If yours is another language, switch X to English while you run the tool, then switch back.</p></details>
+        <details><summary>It says it is "looking up accounts one by one" and takes minutes</summary><p>X had the list already in memory, so the tool could not read it as it loaded and is asking about each account instead. It works, just slower. Next time reload the X page (F5) right before pasting the script and the list arrives fresh.</p></details>
+        <details><summary>The first rows have less detail than the rest</summary><p>X loads the first screen before the script starts. The tool tries to refresh it; when it cannot, those rows keep only what was on screen. The console tells you how many rows were affected.</p></details>
+        <details><summary>Can this get my account suspended?</summary><p>It reads pages you can already see, slower than a person scrolling fast, and changes nothing. It is not an official X product, so use it on your own account at your own discretion. Millions of people use similar browser tools every day.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <footer><span><a href="/"><b>x-utils</b></a> · made by <a href="https://x.com/devploit" rel="me">@devploit</a> · free and open source (MIT) · not affiliated with X Corp</span><span><a href="https://github.com/devploit/x-utils">Source code</a> · <a href="https://github.com/devploit/x-utils/issues">Report a problem</a></span></footer>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+(function(){
+  var TOOLS={
+    "non-followers":{page:"https://x.com/{h}/following",show:"x.com/{h}/following",help:"The tool needs your following list on screen.",time:"Usually 1 to 3 minutes. Beyond a thousand accounts X pauses the list now and then; the tool waits and resumes.",needsHandle:true,sample:"812 following · 540 mutuals · 272 not following back"},
+    "fans":{page:"https://x.com/{h}/followers",show:"x.com/{h}/followers",help:"The tool needs your followers list on screen.",time:"Usually 1 to 3 minutes. X limits how fast followers can be read: with thousands of followers expect pauses of several minutes, handled automatically.",needsHandle:true,sample:"1,301 followers · 540 mutuals · 761 not followed back"},
+    "followers-diff":{page:"https://x.com/{h}/followers",show:"x.com/{h}/followers",help:"The tool needs your followers list on screen. The first run only saves a snapshot; run it again later to see who left.",time:"Usually 1 to 3 minutes. X limits how fast followers can be read: with thousands of followers expect pauses of several minutes, handled automatically.",needsHandle:true,sample:"1,301 followers · +9 · -4"},
+    "follower-quality":{page:"https://x.com/{h}/followers",show:"x.com/{h}/followers",help:"The tool needs your followers list on screen.",time:"Usually 1 to 3 minutes. X limits how fast followers can be read: with thousands of followers expect pauses of several minutes, handled automatically.",needsHandle:true,sample:"1,301 followers · 37 suspicious · 1,264 look fine"},
+    "inactive-following":{page:"https://x.com/{h}/following",show:"x.com/{h}/following",help:"The tool needs your following list on screen. By default it only checks accounts that do not follow you back. X allows about 50 profile checks every 15 minutes, so beyond that the tool pauses and resumes on its own; set maxProfiles at the top of the script for a quicker first look. To check everyone you follow, change onlyNonFollowers to false at the top of the script before pasting it.",time:"The slow one. X allows about 50 profile checks every 15 minutes, so 150 accounts take about 35 minutes with two pauses. The panel shows a countdown; you can set maxProfiles at the top of the script for a quicker first look.",needsHandle:true,sample:"272 checked · 143 silent for 6+ months"},
+    "blocked-muted-export":{page:"https://x.com/settings/blocked/all",show:"x.com/settings/blocked/all",help:"The tool needs your blocked accounts page. For muted accounts open x.com/settings/muted/all instead.",time:"Under a minute for most people.",needsHandle:false,sample:"58 blocked accounts exported"},
+    "engagement-report":{page:"https://x.com/{h}",show:"x.com/{h}",help:"The tool needs a profile page on screen: yours, or any public profile you want to study.",time:"About a minute for 300 posts.",needsHandle:true,sample:"300 posts analysed · 52,727 likes · 2,154,559 views"},
+    "bookmarks-export":{page:"https://x.com/i/history",show:"x.com/i/history",help:"The tool needs your bookmarks page on screen. X now shows bookmarks at x.com/i/history.",time:"About a minute per few hundred bookmarks.",needsHandle:false,sample:"418 bookmarks exported"},
+    "likes-export":{page:"https://x.com/i/history/likes",show:"x.com/i/history/likes",help:"The tool needs your likes page on screen. X now shows likes at x.com/i/history/likes.",time:"A few minutes for a couple of thousand likes.",needsHandle:false,sample:"2,000 liked posts exported"},
+    "thread-unroll":{page:"https://x.com/home",show:"any post of the thread",help:"Open any post of the thread you want to unroll. There is no fixed link for this one: find the thread on X and click its first post.",time:"Under a minute.",needsHandle:false,sample:"Thread by @someone: 14 posts"},
+    "search-export":{page:"https://x.com/explore",show:"x.com/search?q=…",help:"Run your search on X first, with any filters you like. The tool exports what the results page shows.",time:"A minute or two; search results are limited more strictly by X, so very long exports may pause.",needsHandle:false,sample:"500 results exported"},
+    "list-members-export":{page:"https://x.com/{h}/lists",show:"x.com/i/lists/…/members",help:"Open one of your Lists, then its Members page. The tool exports what that page shows.",time:"Under a minute for most lists.",needsHandle:true,sample:"212 members · you do not follow 140"}
+  };
+  var toast=document.getElementById("toast"),timer;
+  function say(t){toast.textContent=t;toast.classList.add("show");clearTimeout(timer);timer=setTimeout(function(){toast.classList.remove("show")},3600)}
+  var sel=document.getElementById("tool"),handle=document.getElementById("handle"),handleField=document.getElementById("handle-field");
+  var openPage=document.getElementById("open-page"),pageUrl=document.getElementById("page-url"),pageHelp=document.getElementById("page-help"),openCurrent=document.getElementById("open-current"),copyCurrent=document.getElementById("copy-current");
+  function cleanHandle(){return handle.value.replace(/^@/,"").replace(/[^A-Za-z0-9_]/g,"").slice(0,15)}
+  function render(){var id=sel.value,t=TOOLS[id],h=cleanHandle()||"yourname";
+    handleField.style.visibility=t.needsHandle?"visible":"hidden";
+    var missing=t.needsHandle&&!cleanHandle();
+    openPage.href=t.page.replace("{h}",h);openPage.classList.toggle("disabled",missing);openPage.setAttribute("aria-disabled",missing?"true":"false");
+    pageUrl.innerHTML="";var shown=t.show.replace("{h}",missing?"\u0000":h).split("\u0000");pageUrl.append(shown[0]);if(shown.length>1){var ph=document.createElement("span");ph.className="ph";ph.textContent="your-username";pageUrl.append(ph,shown[1])}
+    var need=document.getElementById("need-handle");need.hidden=!missing;
+    pageHelp.textContent=t.help;openCurrent.href="dist/"+id+".js";
+    document.getElementById("time-help").textContent="How long: "+t.time;document.getElementById("time-note").className="note"+(/slow one|pauses of several/.test(t.time)?"":" good");
+    try{history.replaceState(null,"","#"+id)}catch(e){}
+    document.querySelector(".panel-mock .h").textContent="";var i=document.createElement("i");document.querySelector(".panel-mock .h").append(i,"x-utils · "+id);document.querySelector(".panel-mock .s").textContent=t.sample}
+  sel.addEventListener("change",render);handle.addEventListener("input",render);
+  if(/^#[a-z-]+$/.test(location.hash)&&TOOLS[location.hash.slice(1)])sel.value=location.hash.slice(1);
+  try{var saved=localStorage.getItem("xu:handle");if(saved)handle.value=saved}catch(e){}
+  handle.addEventListener("change",function(){try{localStorage.setItem("xu:handle",cleanHandle())}catch(e){}});
+  render();
+  document.querySelectorAll("[data-use]").forEach(function(b){b.addEventListener("click",function(){sel.value=b.dataset.use;render();document.getElementById("start").scrollIntoView({behavior:"smooth"});say("Selected. Follow the steps in the guided setup.")})});
+  document.querySelectorAll(".tabs [data-os]").forEach(function(b){b.addEventListener("click",function(){document.querySelectorAll(".tabs [data-os]").forEach(function(o){o.setAttribute("aria-selected","false")});b.setAttribute("aria-selected","true");["mac","win","linux"].forEach(function(os){document.getElementById("keys-"+os).hidden=os!==b.dataset.os})})});
+  var os=/Mac|iPhone|iPad/.test(navigator.platform||"")?"mac":/Linux/.test(navigator.platform||"")&&!/Android/.test(navigator.userAgent)?"linux":"win";
+  var tab=document.querySelector('.tabs [data-os="'+os+'"]');if(tab)tab.click();
+  // Browsers refuse fetch() on file:// pages, so when this page is opened from disk we open the script instead.
+  var fromDisk=location.protocol==="file:";
+  function copyText(text){if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(text);
+    return new Promise(function(resolve,reject){var ta=document.createElement("textarea");ta.value=text;ta.setAttribute("readonly","");ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();var ok=false;try{ok=document.execCommand("copy")}catch(e){}ta.remove();ok?resolve():reject(new Error("execCommand failed"))})}
+  function copyTool(id,btn){var label=btn.querySelector("span")||btn,orig=label.textContent;
+    if(fromDisk){window.open("dist/"+id+".js","_blank");say("Opened the script in a new tab. Select all (Ctrl/Cmd+A), copy (Ctrl/Cmd+C), then paste it into the X console.");return}
+    label.textContent="Copying…";
+    fetch("dist/"+id+".js").then(function(r){if(!r.ok)throw new Error(r.status);return r.text()}).then(function(text){if(text.indexOf("x-utils")<0)throw new Error("unexpected content");return copyText(text)}).then(function(){label.textContent="Copied";btn.classList.add("done");say("Copied. Now go to the X page, click in the console and paste.");setTimeout(function(){label.textContent=orig;btn.classList.remove("done")},2600)})
+    .catch(function(){label.textContent=orig;say("Could not copy automatically. Use 'Open it as a file instead', select everything and copy.")})}
+  copyCurrent.addEventListener("click",function(){copyTool(sel.value,copyCurrent)});
+  if("IntersectionObserver" in window){var navLinks=document.querySelectorAll(".nav .links a[data-nav]");var io=new IntersectionObserver(function(entries){entries.forEach(function(e){if(!e.isIntersecting)return;navLinks.forEach(function(a){a.classList.toggle("active",a.dataset.nav===e.target.id)})})},{rootMargin:"-40% 0px -55% 0px"});["how","start","tools","examples","safety","help"].forEach(function(id){var el=document.getElementById(id);if(el)io.observe(el)})}
+  document.querySelectorAll("button[data-copy]").forEach(function(btn){btn.addEventListener("click",function(){copyTool(btn.dataset.copy,btn)})});
+})();
+</script>
+</body>
+</html>

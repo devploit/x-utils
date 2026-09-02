@@ -1,0 +1,44 @@
+<!doctype html>
+<!-- Source of docs/assets/social-preview.png (1280x640). Render with headless Chrome:
+     chrome --headless=new --window-size=1280,640 --screenshot=docs/assets/social-preview.png docs/assets/social-preview.html -->
+<html lang="en"><head><meta charset="utf-8"><style>
+html,body{margin:0;width:1280px;height:640px;overflow:hidden}
+body{background:radial-gradient(900px 400px at 10% -20%,rgba(120,96,255,.5),transparent 65%),radial-gradient(700px 300px at 100% 20%,rgba(46,196,182,.28),transparent 60%),linear-gradient(180deg,#161d33,#0d1220);color:#f4f6fb;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;position:relative}
+.eyebrow{position:absolute;left:72px;top:64px;display:flex;align-items:center;gap:12px;font:600 15px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.12em;text-transform:uppercase;color:#8f9ab3}
+.eyebrow i{width:12px;height:12px;border-radius:3px;background:linear-gradient(135deg,#b3a6ff,#5ee0a8)}
+h1{position:absolute;left:72px;top:118px;margin:0;width:760px;font-size:62px;line-height:1.02;letter-spacing:-.035em;font-weight:750}
+p{position:absolute;left:72px;top:318px;margin:0;width:640px;font-size:24px;line-height:1.35;color:#8f9ab3}
+.stats{position:absolute;left:72px;right:72px;bottom:70px;display:flex;border-top:1px solid rgba(255,255,255,.14);padding-top:22px}
+.stat{flex:1;border-right:1px solid rgba(255,255,255,.12);margin-right:24px}
+.stat:last-child{border:0;margin:0}
+.stat b{display:block;font:600 46px ui-monospace,Menlo,Consolas,monospace;letter-spacing:-.04em;line-height:1}
+.stat span{display:block;margin-top:8px;font-size:16px;color:#8f9ab3}
+.good b{color:#5ee0a8}.bad b{color:#ff9a6c}.accent b{color:#b3a6ff}
+.foot{position:absolute;left:72px;bottom:30px;font-size:15px;color:#6b7590}
+.card{position:absolute;right:72px;top:96px;width:330px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:18px 20px}
+.card .t{font:600 12px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.1em;text-transform:uppercase;color:#8f9ab3;margin-bottom:12px}
+.bar{display:flex;height:10px;border-radius:999px;overflow:hidden;gap:2px;margin-bottom:14px}
+.bar i{display:block;height:100%}
+.row{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid rgba(255,255,255,.08);font-size:14px;color:#c7cede}
+.av{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff}
+.row .h{font:12.5px ui-monospace,Menlo,Consolas,monospace;color:#8f9ab3;margin-left:auto}
+.row .no{font:11px ui-monospace,Menlo,Consolas,monospace;color:#ff9a6c;background:rgba(255,154,108,.15);padding:1px 7px;border-radius:999px}
+</style></head><body>
+<div class="eyebrow"><i></i>x-utils · free · no password · runs in your browser</div>
+<h1>See who does not follow you back on X.</h1>
+<p>And which posts actually work, who is a bot, what you bookmarked. One paste in your browser, one report, nothing leaves your computer.</p>
+<div class="card"><div class="t">Non-followers · @you</div>
+  <div class="bar"><i style="flex:24;background:#5ee0a8"></i><i style="flex:14;background:#ff9a6c"></i></div>
+  <div class="row"><span class="av" style="background:hsl(210 45% 48%)">T</span>Tim Petrova<span class="no">no</span><span class="h">@tim_petrova83</span></div>
+  <div class="row"><span class="av" style="background:hsl(140 45% 48%)">I</span>Iker García<span class="no">no</span><span class="h">@ikergarc_a15</span></div>
+  <div class="row"><span class="av" style="background:hsl(320 45% 48%)">C</span>Clara Silva<span class="no">no</span><span class="h">@clara_silva</span></div>
+  <div class="row"><span class="av" style="background:hsl(40 45% 48%)">M</span>Marta Ortiz<span class="no">no</span><span class="h">@marta_ortiz</span></div>
+</div>
+<div class="stats">
+  <div class="stat"><b>38</b><span>Following</span></div>
+  <div class="stat good"><b>24</b><span>Mutuals</span></div>
+  <div class="stat bad"><b>14</b><span>Not following back</span></div>
+  <div class="stat accent"><b>12</b><span>Free tools</span></div>
+</div>
+<div class="foot">x-utils.com</div>
+</body></html>

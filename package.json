@@ -1,0 +1,21 @@
+{
+  "name": "x-utils",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Copy-paste browser console tools for X (Twitter): audit who follows you back, export bookmarks, unroll threads and more. No API keys, no servers.",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test \"tests/**/*.test.mjs\"",
+    "examples": "node scripts/examples.mjs",
+    "check": "npm run build && npm test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": ["twitter", "x", "console", "devtools", "bookmarks", "followers", "export", "userscript"],
+  "homepage": "https://x-utils.com",
+  "repository": { "type": "git", "url": "https://github.com/devploit/x-utils.git" },
+  "bugs": "https://github.com/devploit/x-utils/issues",
+  "license": "MIT"
+}

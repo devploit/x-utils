@@ -1,0 +1,9 @@
+node_modules/
+.DS_Store
+*.log
+# Personal exports must never end up in the repository
+*.csv
+!tests/fixtures/*.csv
+x-utils_*
+# Local test harness pages
+.harness-tmp/

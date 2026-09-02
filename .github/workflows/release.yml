@@ -1,0 +1,35 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Publish GitHub release with the paste-ready tools
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm run check
+      - name: Package dist/
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          mkdir -p out
+          cp -r dist "out/x-utils-$VERSION"
+          cp README.md LICENSE CHANGELOG.md "out/x-utils-$VERSION/"
+          (cd out && zip -qr "x-utils-$VERSION.zip" "x-utils-$VERSION")
+      - name: Extract release notes from CHANGELOG.md
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          awk -v v="$VERSION" '$0 ~ "^## \\[" v "\\]" {p=1; next} /^## \[/ {if (p) exit} p' CHANGELOG.md > notes.md
+          [ -s notes.md ] || echo "See CHANGELOG.md" > notes.md
+      - uses: softprops/action-gh-release@v2
+        with:
+          body_path: notes.md
+          files: out/*.zip

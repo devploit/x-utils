@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    name: Build, test and verify generated files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build and test
+        run: npm run check
+      - name: Regenerate sample reports
+        run: npm run examples
+      - name: Fail if dist/ or docs/examples/ were not regenerated before committing
+        run: |
+          if ! git diff --exit-code --stat -- dist docs/examples; then
+            echo "::error::dist/ or docs/examples/ is out of date. Run 'npm run build && npm run examples' and commit the result."
+            exit 1
+          fi

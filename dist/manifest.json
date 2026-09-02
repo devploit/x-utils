@@ -1,0 +1,89 @@
+{
+  "version": "0.1.0",
+  "tools": [
+    {
+      "id": "blocked-muted-export",
+      "name": "Blocked & muted export",
+      "description": "Exports your blocked or muted accounts to CSV/JSON so the lists exist outside of X.",
+      "page": "https://x.com/settings/blocked/all  (or https://x.com/settings/muted/all)",
+      "file": "dist/blocked-muted-export.js"
+    },
+    {
+      "id": "bookmarks-export",
+      "name": "Bookmarks export",
+      "description": "Exports your bookmarks to Markdown, CSV and JSON with author, text, date, metrics and media links.",
+      "page": "https://x.com/i/history  (X moved bookmarks here; the old /i/bookmarks URL also works)",
+      "file": "dist/bookmarks-export.js"
+    },
+    {
+      "id": "engagement-report",
+      "name": "Engagement report",
+      "description": "Ranks your recent posts by likes, reposts, replies and views, and summarises averages, medians and your best posting slot.",
+      "page": "https://x.com/<your_handle>  (use /with_replies to include replies)",
+      "file": "dist/engagement-report.js"
+    },
+    {
+      "id": "fans",
+      "name": "Fans",
+      "description": "Lists the accounts that follow you but you do not follow back.",
+      "page": "https://x.com/<your_handle>/followers",
+      "file": "dist/fans.js"
+    },
+    {
+      "id": "follower-quality",
+      "name": "Follower quality",
+      "description": "Scores your followers with bot-like signals (default avatar, no posts, brand-new account, absurd follow ratio) and lists the suspicious ones.",
+      "page": "https://x.com/<your_handle>/followers",
+      "file": "dist/follower-quality.js"
+    },
+    {
+      "id": "followers-diff",
+      "name": "Followers diff",
+      "description": "Compares your followers (or following) list with the previous run and reports who left, who arrived and who renamed.",
+      "page": "https://x.com/<your_handle>/followers  (or /following)",
+      "file": "dist/followers-diff.js"
+    },
+    {
+      "id": "inactive-following",
+      "name": "Inactive following",
+      "description": "Finds the accounts you follow that have not posted in months (or ever). By default it checks only the ones that do not follow you back, one profile request per account.",
+      "page": "https://x.com/<your_handle>/following",
+      "file": "dist/inactive-following.js"
+    },
+    {
+      "id": "likes-export",
+      "name": "Likes export",
+      "description": "Exports the posts you liked to Markdown, CSV and JSON.",
+      "page": "https://x.com/i/history/likes  (X moved likes here; the old /<handle>/likes URL also works)",
+      "file": "dist/likes-export.js"
+    },
+    {
+      "id": "list-members-export",
+      "name": "List members export",
+      "description": "Exports the members (or followers) of any X List and flags which of them you follow.",
+      "page": "https://x.com/i/lists/<list_id>/members  (or /followers)",
+      "file": "dist/list-members-export.js"
+    },
+    {
+      "id": "non-followers",
+      "name": "Non-followers",
+      "description": "Lists the accounts you follow that do not follow you back.",
+      "page": "https://x.com/<your_handle>/following",
+      "file": "dist/non-followers.js"
+    },
+    {
+      "id": "search-export",
+      "name": "Search export",
+      "description": "Exports the results of an X search (any query, any tab) to CSV, JSON and Markdown.",
+      "page": "https://x.com/search?q=<your query>&f=live",
+      "file": "dist/search-export.js"
+    },
+    {
+      "id": "thread-unroll",
+      "name": "Thread unroll",
+      "description": "Reconstructs a thread from any post in it and exports it as clean Markdown, plain text and JSON.",
+      "page": "https://x.com/<handle>/status/<id>  (any post of the thread)",
+      "file": "dist/thread-unroll.js"
+    }
+  ]
+}

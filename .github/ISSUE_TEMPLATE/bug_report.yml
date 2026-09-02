@@ -1,0 +1,37 @@
+name: Something did not work
+description: A tool stopped, showed an error, or produced an incomplete report.
+labels: [bug]
+body:
+  - type: dropdown
+    id: tool
+    attributes:
+      label: Tool
+      options: [non-followers, fans, followers-diff, follower-quality, inactive-following, blocked-muted-export, engagement-report, bookmarks-export, likes-export, thread-unroll, search-export, list-members-export]
+    validations:
+      required: true
+  - type: input
+    id: page
+    attributes:
+      label: X page you were on
+      description: The URL pattern, without your data if you prefer (for example x.com/YOU/following).
+    validations:
+      required: true
+  - type: textarea
+    id: console
+    attributes:
+      label: What the console printed
+      description: Copy the lines that start with "x-utils", especially yellow or red ones.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: debug
+    attributes:
+      label: Diagnostics
+      description: In the same console, run `copy(JSON.stringify(xu.debug))` and paste the result here. It contains one public profile and one public post as X sent them, plus counters; never your credentials.
+      render: json
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and X interface language
+      placeholder: Chrome 140 on macOS, X in Spanish
