@@ -8,7 +8,8 @@
     "build": "node scripts/build.mjs",
     "test": "node --test \"tests/**/*.test.mjs\"",
     "examples": "node scripts/examples.mjs",
-    "check": "npm run build && npm test"
+    "site": "node scripts/site.mjs",
+    "check": "npm run build && npm run site && npm test"
   },
   "engines": {
     "node": ">=20"

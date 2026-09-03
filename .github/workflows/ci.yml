@@ -17,10 +17,10 @@ jobs:
       - name: Build and test
         run: npm run check
       - name: Regenerate sample reports
-        run: npm run examples
+        run: npm run examples && npm run site
       - name: Fail if dist/ or docs/examples/ were not regenerated before committing
         run: |
-          if ! git diff --exit-code --stat -- dist docs/examples; then
-            echo "::error::dist/ or docs/examples/ is out of date. Run 'npm run build && npm run examples' and commit the result."
+          if ! git diff --exit-code --stat -- dist docs/examples sitemap.xml '*.html'; then
+            echo "::error::dist/, docs/examples/, sitemap.xml or the tool pages are out of date. Run 'npm run build && npm run examples && npm run site' and commit the result."
             exit 1
           fi

@@ -1,6 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url><loc>https://x-utils.com/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+<url><loc>https://x-utils.com/non-followers</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+<url><loc>https://x-utils.com/fans</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+<url><loc>https://x-utils.com/who-unfollowed-me</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+<url><loc>https://x-utils.com/fake-followers</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+<url><loc>https://x-utils.com/inactive-following</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+<url><loc>https://x-utils.com/blocked-muted-export</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+<url><loc>https://x-utils.com/engagement-report</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+<url><loc>https://x-utils.com/bookmarks-export</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+<url><loc>https://x-utils.com/likes-export</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+<url><loc>https://x-utils.com/thread-unroll</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+<url><loc>https://x-utils.com/search-export</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+<url><loc>https://x-utils.com/list-members-export</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
 <url><loc>https://x-utils.com/docs/examples/bookmarks-export.html</loc><changefreq>monthly</changefreq><priority>0.4</priority></url>
 <url><loc>https://x-utils.com/docs/examples/engagement-report.html</loc><changefreq>monthly</changefreq><priority>0.4</priority></url>
 <url><loc>https://x-utils.com/docs/examples/follower-quality.html</loc><changefreq>monthly</changefreq><priority>0.4</priority></url>
