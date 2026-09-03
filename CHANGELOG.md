@@ -4,6 +4,10 @@ All notable changes to x-utils are recorded here. The format follows [Keep a Cha
 
 ## [Unreleased]
 
+### Added
+
+- Landing SEO: titles, headings and description now say "X (Twitter)" and describe each tool; JSON-LD structured data (SoftwareApplication, HowTo for the guided setup, FAQPage mirroring the on-page FAQ, checked by a test); `robots.txt` and `sitemap.xml`; `twitter:site`; screenshots served as WebP (about 8 times smaller) with dimensions, lazy loading and alt text; hosted sample reports get search-friendly titles and descriptions.
+
 ### Fixed
 
 - Report: chart tooltips are now a real hover box (weekday and hour slot with post count and average, per-post date, likes, reposts, replies, views and an excerpt, follower deltas on the trend) instead of the browser's slow SVG titles.

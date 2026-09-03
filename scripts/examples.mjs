@@ -309,6 +309,11 @@ const engagementHtml = lib.renderHtmlReport({
 await mkdir(outDir, { recursive: true });
 const files = { "non-followers.html": nonFollowersHtml, "follower-quality.html": qualityHtml, "bookmarks-export.html": bookmarksHtml, "engagement-report.html": engagementHtml, "followers-diff.html": diffHtml };
 for (const [name, html] of Object.entries(files)) {
-  await writeFile(path.join(outDir, name), html);
+  // Hosted samples: a search-friendly title and description instead of the personal one a real run gets.
+  const label = { "non-followers.html": "Who does not follow you back", "follower-quality.html": "Follower quality", "bookmarks-export.html": "Bookmarks export", "engagement-report.html": "Engagement report", "followers-diff.html": "Who unfollowed me" }[name];
+  const page = html
+    .replace(/<title>[^<]*<\/title>/, `<title>Sample report: ${label} · x-utils</title>`)
+    .replace("<title>", `<meta name="description" content="A sample x-utils report (${label}), built from made-up accounts and posts. Sort the tables, use the filters, try the buttons."><title>`);
+  await writeFile(path.join(outDir, name), page);
   console.log(`wrote docs/examples/${name} (${(html.length / 1024).toFixed(1)} KB)`);
 }

@@ -33,3 +33,29 @@ test("home links point at the site root so the URL stays clean", () => {
   assert.ok(html.includes('<a class="brand" href="/"'));
   assert.ok(!html.includes('href="./"') && !html.includes('href="index.html"'));
 });
+
+test("landing page structured data is valid JSON and mirrors the visible FAQ and steps", () => {
+  const blocks = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => JSON.parse(m[1]));
+  const types = blocks.map((b) => b["@type"]);
+  assert.deepEqual(types.sort(), ["FAQPage", "HowTo", "SoftwareApplication"]);
+  const faq = blocks.find((b) => b["@type"] === "FAQPage");
+  const summaries = [...html.matchAll(/<summary>(.*?)<\/summary>/g)].map((m) => m[1].replace(/<[^>]+>/g, "").replace(/&quot;/g, '"'));
+  assert.deepEqual(faq.mainEntity.map((q) => q.name), summaries, "FAQ schema must match the questions on the page");
+  const howTo = blocks.find((b) => b["@type"] === "HowTo");
+  assert.equal(howTo.step.length, (html.match(/<div class="gstep(?: has-aside)?">/g) || []).length);
+  const app = blocks.find((b) => b["@type"] === "SoftwareApplication");
+  assert.equal(app.offers.price, "0");
+});
+
+test("robots.txt, sitemap.xml and every image the landing references exist", async () => {
+  const { access } = await import("node:fs/promises");
+  const robots = await readFile(path.join(root, "robots.txt"), "utf8");
+  assert.match(robots, /^Sitemap: https:\/\/x-utils\.com\/sitemap\.xml$/m);
+  const sitemap = await readFile(path.join(root, "sitemap.xml"), "utf8");
+  assert.ok(sitemap.includes("<loc>https://x-utils.com/</loc>"));
+  for (const [, src] of html.matchAll(/<img src="([^"]+)"/g)) await access(path.join(root, src));
+  for (const [, tag] of html.matchAll(/(<img [^>]+>)/g)) {
+    assert.match(tag, /width="\d+" height="\d+"/, `image without dimensions: ${tag.slice(0, 80)}`);
+    assert.doesNotMatch(tag, /alt=""/, `image without alt text: ${tag.slice(0, 80)}`);
+  }
+});

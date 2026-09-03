@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://x-utils.com/sitemap.xml
